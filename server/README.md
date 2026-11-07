@@ -21,6 +21,10 @@ cp .env.example .env
 Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` in `.env`.
 Set `JWT_SECRET` to a unique random secret (for example,
 `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+Set `DOCTOR_REGISTRATION_CODE` to a separate private, high-entropy code. Public
+patient registration is open; doctor registration requires this shared code
+and should only be given to verified doctors. This is a lightweight assignment
+gate, not a substitute for a production doctor identity-verification process.
 `CLIENT_URL` is a comma-separated allowlist of browser origins. Requests without
 an `Origin` header (such as command-line clients) are allowed.
 
@@ -84,6 +88,9 @@ Register with `POST /api/auth/register` using JSON:
 }
 ```
 
+For `"role": "doctor"`, include
+`"doctor_registration_code": "<value of DOCTOR_REGISTRATION_CODE>"`.
+
 Use the returned token as `Authorization: Bearer <token>`. Roles are
 `patient` and `doctor`. Protected endpoints enforce roles on the server.
 Successful responses have `success: true`; errors have `success: false` and a
@@ -94,6 +101,8 @@ Unexpected server errors return a generic 500 response without database detail.
 ## API endpoints
 
 All bodies are JSON. Protected endpoints require a bearer token.
+The detailed request/response contract and common error statuses are in
+[docs/api-contract.md](./docs/api-contract.md).
 
 ### Authentication
 
@@ -196,4 +205,5 @@ The current suite covers date and reading validation, report date boundaries
 and empty-period statistics, plus transaction locking, authorization, and
 existing-assignment rejection in the connection workflow. Database-backed
 end-to-end tests require a separately provisioned test database and are not
-configured by this project yet.
+part of the checked-in Jest suite; a separate test database must be used for
+HTTP/database integration checks.

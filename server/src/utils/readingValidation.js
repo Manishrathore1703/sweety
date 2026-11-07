@@ -55,7 +55,11 @@ const validateReading = ({ reading_date, time_slot, glucose_value }) => {
 };
 
 const validateId = (id) => {
-    return typeof id === "string" && /^[1-9]\d*$/.test(id);
+    if (typeof id !== "string" || !/^[1-9]\d*$/.test(id)) {
+        return false;
+    }
+
+    return BigInt(id) <= 9223372036854775807n;
 };
 
 module.exports = {

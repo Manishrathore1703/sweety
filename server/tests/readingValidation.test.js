@@ -39,5 +39,6 @@ describe("reading validation", () => {
         expect(validateId("0")).toBe(false);
         expect(validateId("1.2")).toBe(false);
         expect(validateId("abc")).toBe(false);
+        expect(validateId("9223372036854775808")).toBe(false);
     });
 });

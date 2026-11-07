@@ -54,5 +54,26 @@ CREATE INDEX IF NOT EXISTS assignments_patient_status_idx
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
     ON users (LOWER(email));
 
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_index i
+        WHERE i.indrelid = 'readings'::regclass
+          AND i.indisunique
+          AND i.indisvalid
+          AND i.indpred IS NULL
+          AND i.indnkeyatts = 3
+          AND position(
+              '(user_id, reading_date, time_slot)'
+              IN pg_get_indexdef(i.indexrelid)
+          ) > 0
+    ) THEN
+        CREATE UNIQUE INDEX readings_patient_date_slot_unique
+            ON readings (user_id, reading_date, time_slot);
+    END IF;
+END
+$$;
+
 CREATE INDEX IF NOT EXISTS readings_user_date_idx
     ON readings (user_id, reading_date);

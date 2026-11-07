@@ -2,6 +2,7 @@
 const pool = require("../config/db");
 
 const {
+    validateDate,
     validateReading,
     validateId,
 } = require("../utils/readingValidation");
@@ -19,7 +20,7 @@ const isFutureDate = async (date) => {
 
 const createReading = async (req, res) => {
     try {
-        const { reading_date, time_slot, glucose_value } = req.body;
+        const { reading_date, time_slot, glucose_value } = req.body || {};
 
         const errors = validateReading({
             reading_date,
@@ -60,8 +61,6 @@ const createReading = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Create reading error:", error);
-
         if (error.code === "23505") {
             return res.status(409).json({
                 success: false,
@@ -69,6 +68,7 @@ const createReading = async (req, res) => {
             });
         }
 
+        console.error("Create reading error:", error.code || error.message);
         return res.status(500).json({
             success: false,
             message: "Failed to add glucose reading",
@@ -119,18 +119,10 @@ const getReadings = async (req, res) => {
         const countValues = [userId];
 
         if (date) {
-            const errors = validateReading({
-                reading_date: date,
-                time_slot: "morning_fasting",
-                glucose_value: 100,
-            });
-
-            if (errors.some(error =>
-                error.includes("Date")
-            )) {
+            if (!validateDate(date)) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid date. Use YYYY-MM-DD",
+                    message: "Invalid date. Use a valid YYYY-MM-DD calendar date",
                 });
             }
 
@@ -232,7 +224,7 @@ const getReadingById = async (req, res) => {
 const updateReading = async (req, res) => {
     try {
         const { id } = req.params;
-        const { reading_date, time_slot, glucose_value } = req.body;
+        const { reading_date, time_slot, glucose_value } = req.body || {};
 
         if (!validateId(id)) {
             return res.status(400).json({
@@ -291,10 +283,7 @@ const updateReading = async (req, res) => {
             message: "Reading updated successfully",
             reading: result.rows[0],
         });
-
     } catch (error) {
-        console.error("Update reading error:", error);
-
         if (error.code === "23505") {
             return res.status(409).json({
                 success: false,
@@ -302,6 +291,7 @@ const updateReading = async (req, res) => {
             });
         }
 
+        console.error("Update reading error:", error.code || error.message);
         return res.status(500).json({
             success: false,
             message: "Failed to update reading",

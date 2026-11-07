@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS readings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- One reading per slot per patient per day.
-    UNIQUE (user_id, reading_date, time_slot)
+    CONSTRAINT readings_patient_date_slot_unique
+        UNIQUE (user_id, reading_date, time_slot)
 );
 
 CREATE INDEX IF NOT EXISTS readings_user_date_idx

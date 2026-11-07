@@ -2,6 +2,19 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+
+const matchesDoctorRegistrationCode = (providedCode, configuredCode) => {
+    if (typeof providedCode !== "string" || !configuredCode) {
+        return false;
+    }
+
+    const provided = Buffer.from(providedCode);
+    const configured = Buffer.from(configuredCode);
+
+    return provided.length === configured.length &&
+        crypto.timingSafeEqual(provided, configured);
+};
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -19,7 +32,13 @@ const generateToken = (user) => {
 // POST /api/auth/register
 const register = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body || {};
+        const {
+            name,
+            email,
+            password,
+            role,
+            doctor_registration_code: doctorRegistrationCode,
+        } = req.body || {};
 
         // 1. Validate required fields
         if (!name || !email || !password || !role) {
@@ -73,6 +92,19 @@ const register = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Role must be patient or doctor",
+            });
+        }
+
+        if (
+            role === "doctor" &&
+            !matchesDoctorRegistrationCode(
+                doctorRegistrationCode,
+                process.env.DOCTOR_REGISTRATION_CODE
+            )
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "A valid doctor registration code is required",
             });
         }
 
