@@ -19,10 +19,21 @@ const generateToken = (user) => {
 // POST /api/auth/register
 const register = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role } = req.body || {};
 
         // 1. Validate required fields
         if (!name || !email || !password || !role) {
+            return res.status(400).json({
+                success: false,
+                message: "Name, email, password and role are required",
+            });
+        }
+
+        if (
+            typeof name !== "string" ||
+            typeof email !== "string" ||
+            typeof role !== "string"
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "Name, email, password and role are required",
@@ -123,9 +134,14 @@ const register = async (req, res) => {
 // POST /api/auth/login
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
-        if (!email || !password) {
+        if (
+            typeof email !== "string" ||
+            !email.trim() ||
+            typeof password !== "string" ||
+            !password
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "Email and password are required",
@@ -133,6 +149,12 @@ const login = async (req, res) => {
         }
 
         const normalizedEmail = email.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a valid email address",
+            });
+        }
 
         // 1. Find user
         const result = await pool.query(

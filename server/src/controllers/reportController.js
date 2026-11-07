@@ -3,6 +3,7 @@ const pool = require("../config/db");
 
 const { validateDate } = require("../utils/readingValidation");
 const { getGlucoseReport } = require("../services/reportService");
+const HttpError = require("../utils/httpError");
 
 // Check whether selected date is in the future.
 const isFutureDate = async (date) => {
@@ -21,7 +22,7 @@ const formatDate = (date) => {
 
 // Generate date ranges for each report.
 const getDateRange = (type, selectedDate) => {
-    const [year, month, day] = selectedDate
+    const [year, month] = selectedDate
         .split("-")
         .map(Number);
 
@@ -61,7 +62,7 @@ const getDateRange = (type, selectedDate) => {
 };
 
 // Reusable report controller.
-const generateReport = (type) => {
+const generateReport = (type, resolveUserId = (req) => req.user.id) => {
     return async (req, res) => {
         try {
             const { date } = req.query;
@@ -73,6 +74,8 @@ const generateReport = (type) => {
                     message: "A valid date in YYYY-MM-DD format is required",
                 });
             }
+
+            const userId = await resolveUserId(req);
 
             // 2. Reject future dates
             if (await isFutureDate(date)) {
@@ -90,7 +93,7 @@ const generateReport = (type) => {
 
             // 4. Fetch report for authenticated patient
             const report = await getGlucoseReport(
-                req.user.id,
+                userId,
                 startDate,
                 endDate,
                 type === "daily"
@@ -111,6 +114,10 @@ const generateReport = (type) => {
             });
 
         } catch (error) {
+            if (error instanceof HttpError) {
+                throw error;
+            }
+
             console.error(`${type} report error:`, error);
 
             return res.status(500).json({
@@ -125,4 +132,6 @@ module.exports = {
     getDailyReport: generateReport("daily"),
     getMonthToDateReport: generateReport("month-to-date"),
     getPreviousMonthReport: generateReport("previous-month"),
+    generateReport,
+    getDateRange,
 };

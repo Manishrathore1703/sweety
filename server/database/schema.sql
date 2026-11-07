@@ -1,6 +1,6 @@
 
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
@@ -14,13 +14,13 @@ CREATE TABLE users (
 );
 
 -- Emails are case-insensitive for uniqueness.
-CREATE UNIQUE INDEX users_email_unique
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
 ON users (LOWER(email));
 
 
 -- 2. GLUCOSE READINGS
 
-CREATE TABLE readings (
+CREATE TABLE IF NOT EXISTS readings (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
     user_id BIGINT NOT NULL
@@ -48,14 +48,14 @@ CREATE TABLE readings (
     UNIQUE (user_id, reading_date, time_slot)
 );
 
-CREATE INDEX readings_user_date_idx
+CREATE INDEX IF NOT EXISTS readings_user_date_idx
 ON readings (user_id, reading_date);
 
 
 -- 3. DOCTOR-PATIENT REQUESTS
 -- Supports invitations initiated by either side.
 
-CREATE TABLE doctor_patient_requests (
+CREATE TABLE IF NOT EXISTS doctor_patient_requests (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
     doctor_id BIGINT NOT NULL
@@ -84,20 +84,26 @@ CREATE TABLE doctor_patient_requests (
 );
 
 -- Prevent duplicate pending requests between the same doctor and patient.
-CREATE UNIQUE INDEX unique_pending_doctor_patient_request
+CREATE UNIQUE INDEX IF NOT EXISTS unique_pending_doctor_patient_request
 ON doctor_patient_requests (doctor_id, patient_id)
 WHERE status = 'pending';
 
 -- Prevent a patient from having multiple pending requests they initiated.
-CREATE UNIQUE INDEX unique_pending_patient_request
+CREATE UNIQUE INDEX IF NOT EXISTS unique_pending_patient_request
 ON doctor_patient_requests (patient_id)
 WHERE status = 'pending' AND initiated_by = 'patient';
+
+CREATE INDEX IF NOT EXISTS doctor_requests_sent_idx
+ON doctor_patient_requests (doctor_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS doctor_requests_received_idx
+ON doctor_patient_requests (patient_id, created_at DESC);
 
 
 -- 4. DOCTOR-PATIENT ASSIGNMENTS
 -- Stores current and previous relationships.
 
-CREATE TABLE doctor_patient_assignments (
+CREATE TABLE IF NOT EXISTS doctor_patient_assignments (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
     doctor_id BIGINT NOT NULL
@@ -123,12 +129,12 @@ CREATE TABLE doctor_patient_assignments (
 
 -- A patient can have only one active doctor.
 -- A doctor can have multiple active patients.
-CREATE UNIQUE INDEX unique_active_doctor_per_patient
+CREATE UNIQUE INDEX IF NOT EXISTS unique_active_doctor_per_patient
 ON doctor_patient_assignments (patient_id)
 WHERE status = 'active';
 
-CREATE INDEX assignments_doctor_status_idx
+CREATE INDEX IF NOT EXISTS assignments_doctor_status_idx
 ON doctor_patient_assignments (doctor_id, status);
 
-CREATE INDEX assignments_patient_status_idx
+CREATE INDEX IF NOT EXISTS assignments_patient_status_idx
 ON doctor_patient_assignments (patient_id, status);
