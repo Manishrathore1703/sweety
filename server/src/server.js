@@ -12,6 +12,9 @@ if (!process.env.JWT_SECRET) {
 
 const pool = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
+const readingsRoutes = require("./routes/readingsRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+
 
 const app = express();
 
@@ -20,6 +23,8 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/readings", readingsRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Home route
 app.get("/", (req, res) => {
@@ -53,6 +58,10 @@ app.get("/api/health", async (req, res) => {
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-    console.log(`Sweety API running on port ${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Sweety API running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
