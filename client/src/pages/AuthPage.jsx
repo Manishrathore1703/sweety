@@ -90,10 +90,11 @@ export default function AuthPage() {
         </aside>
 
         <section className="auth-card">
-          <div className="auth-toggle" role="tablist" aria-label="Authentication mode">
+          <div className="auth-toggle" role="group" aria-label="Authentication mode">
             <button
               type="button"
               className={mode === 'login' ? 'active' : ''}
+              aria-pressed={mode === 'login'}
               onClick={() => setMode('login')}
             >
               Login
@@ -101,6 +102,7 @@ export default function AuthPage() {
             <button
               type="button"
               className={mode === 'register' ? 'active' : ''}
+              aria-pressed={mode === 'register'}
               onClick={() => setMode('register')}
             >
               Register
@@ -171,7 +173,7 @@ export default function AuthPage() {
               </label>
             )}
 
-            {error ? <p className="error-banner">{error}</p> : null}
+            {error ? <p className="error-banner" role="alert">{error}</p> : null}
 
             <button type="submit" className="primary-button" disabled={busy}>
               {busy

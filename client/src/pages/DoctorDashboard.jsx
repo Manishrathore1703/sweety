@@ -134,7 +134,7 @@ export default function DoctorDashboard() {
   };
 
   return (
-    <div className="page-shell">
+    <div className="page-shell doctor-dashboard">
       <header className="topbar">
         <div>
           <p className="eyebrow">Doctor portal</p>
@@ -148,7 +148,7 @@ export default function DoctorDashboard() {
       </header>
 
       <div className="dashboard-grid dashboard-grid-two">
-        <section className="card form-card">
+        <section className="card form-card doctor-search-card">
           <div className="section-header">
             <div>
               <p className="eyebrow">Invite</p>
@@ -185,11 +185,11 @@ export default function DoctorDashboard() {
             </div>
           ) : null}
 
-          {statusMessage ? <p className="success-banner">{statusMessage}</p> : null}
-          {error ? <p className="error-banner">{error}</p> : null}
+          {statusMessage ? <p className="success-banner" role="status">{statusMessage}</p> : null}
+          {error ? <p className="error-banner" role="alert">{error}</p> : null}
         </section>
 
-        <section className="card">
+        <section className="card doctor-patients-card">
           <div className="section-header">
             <div>
               <p className="eyebrow">Assignments</p>
@@ -229,7 +229,7 @@ export default function DoctorDashboard() {
       </div>
 
       <div className="dashboard-grid dashboard-grid-two bottom-grid">
-        <section className="card">
+        <section className="card doctor-requests-card">
           <div className="section-header">
             <div>
               <p className="eyebrow">Requests</p>
@@ -284,7 +284,7 @@ export default function DoctorDashboard() {
           </div>
         </section>
 
-        <section className="card">
+        <section className="card doctor-report-card">
           <div className="section-header">
             <div>
               <p className="eyebrow">Monitoring</p>
@@ -342,19 +342,19 @@ export default function DoctorDashboard() {
               </div>
 
               <div className="stats-grid">
-                <div className="stat-tile">
+                <div className="stat-tile stat-average">
                   <span>Average</span>
                   <strong>{stats.average ?? '—'} mg/dL</strong>
                 </div>
-                <div className="stat-tile">
+                <div className="stat-tile stat-maximum">
                   <span>Maximum</span>
                   <strong>{stats.maximum ?? '—'} mg/dL</strong>
                 </div>
-                <div className="stat-tile">
+                <div className="stat-tile stat-minimum">
                   <span>Minimum</span>
                   <strong>{stats.minimum ?? '—'} mg/dL</strong>
                 </div>
-                <div className="stat-tile highlight">
+                <div className="stat-tile highlight stat-count">
                   <span>Readings</span>
                   <strong>{stats.total_readings ?? 0}</strong>
                 </div>
@@ -363,12 +363,12 @@ export default function DoctorDashboard() {
               {report?.readings?.length ? (
                 <div className="reading-list compact">
                   {report.readings.map((reading) => (
-                    <div key={reading.id} className="reading-item">
+                    <div key={reading.id} className="reading-item report-reading-item">
                       <div>
                         <strong>{slotLabels[reading.time_slot] ?? formatStatus(reading.time_slot)}</strong>
                         <small>{reading.reading_date}</small>
                       </div>
-                      <span>{reading.glucose_value} mg/dL</span>
+                      <span className="reading-value">{reading.glucose_value} mg/dL</span>
                     </div>
                   ))}
                 </div>
@@ -384,7 +384,7 @@ export default function DoctorDashboard() {
         </section>
       </div>
 
-      <div className="card assignment-card">
+      <div className="card assignment-card doctor-assignment-card">
         <div className="section-header">
           <div>
             <p className="eyebrow">History</p>
@@ -403,7 +403,7 @@ export default function DoctorDashboard() {
                   <strong>{assignment.patient_name}</strong>
                   <small>{assignment.status === 'active' ? 'Active assignment' : 'Ended assignment'}</small>
                 </div>
-                <span>{assignment.status}</span>
+                <span className={`status-pill ${assignment.status}`}>{formatStatus(assignment.status)}</span>
               </li>
             ))}
           </ul>

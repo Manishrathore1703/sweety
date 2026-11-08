@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, CalendarRange, Clock3, LogOut, PencilLine, PlusCircle, Search, Trash2, UserRound } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  CalendarRange,
+  Clock3,
+  HeartPulse,
+  LayoutDashboard,
+  LogOut,
+  PencilLine,
+  PlusCircle,
+  Search,
+  Trash2,
+  UserRound,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api, { getApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -191,27 +204,54 @@ export default function PatientDashboard() {
     average: null,
     total_readings: 0,
   };
+  const displayName = user?.name || 'Patient';
+  const firstName = displayName.split(' ')[0];
+  const formattedDate = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date());
 
   if (loading) {
     return <div className="loading-screen">Loading your patient dashboard…</div>;
   }
 
   return (
-    <div className="page-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Patient portal</p>
-          <h1>Welcome, {user?.name || 'Patient'}</h1>
+    <div className="page-shell patient-dashboard">
+      <nav className="patient-navbar" aria-label="Patient dashboard">
+        <a className="patient-brand" href="#overview" aria-label="Sweety dashboard home">
+          <span className="patient-brand-icon"><HeartPulse size={20} /></span>
+          <span>Sweety</span>
+        </a>
+
+        <div className="patient-nav-links">
+          <a href="#overview"><LayoutDashboard size={16} />Overview</a>
+          <a href="#add-reading"><PlusCircle size={16} />Add reading</a>
+          <a href="#readings"><Activity size={16} />History</a>
+          <a href="#care-team"><UserRound size={16} />Care team</a>
         </div>
 
-        <button className="ghost-button" type="button" onClick={() => { logout(); navigate('/auth', { replace: true }); }}>
-          <LogOut size={16} />
-          Log out
-        </button>
+        <div className="patient-account">
+          <span className="patient-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span>
+          <span className="patient-account-name">{displayName}</span>
+          <button className="ghost-button patient-logout" type="button" onClick={() => { logout(); navigate('/auth', { replace: true }); }}>
+            <LogOut size={16} />
+            <span>Log out</span>
+          </button>
+        </div>
+      </nav>
+
+      <header className="patient-welcome" id="overview">
+        <div>
+          <p className="eyebrow">Your health, at a glance</p>
+          <h1>Good to see you, {firstName}.</h1>
+          <p className="patient-welcome-copy">Keep your care on track, one reading at a time.</p>
+        </div>
+        <div className="patient-date"><CalendarRange size={17} />{formattedDate}</div>
       </header>
 
       <div className="dashboard-grid dashboard-grid-two">
-        <section className="card form-card">
+        <section className="card form-card patient-reading-entry" id="add-reading">
           <div className="section-header">
             <div>
               <p className="eyebrow">Entry</p>
@@ -258,8 +298,8 @@ export default function PatientDashboard() {
               />
             </label>
 
-            {message ? <p className="success-banner">{message}</p> : null}
-            {error ? <p className="error-banner">{error}</p> : null}
+            {message ? <p className="success-banner" role="status">{message}</p> : null}
+            {error ? <p className="error-banner" role="alert">{error}</p> : null}
 
             <div className="button-row">
               <button type="submit" className="primary-button">
@@ -281,7 +321,7 @@ export default function PatientDashboard() {
           </form>
         </section>
 
-        <section className="card">
+        <section className="card patient-report-card">
           <div className="section-header">
             <div>
               <p className="eyebrow">Reports</p>
@@ -321,19 +361,19 @@ export default function PatientDashboard() {
           </div>
 
           <div className="stats-grid">
-            <div className="stat-tile">
+            <div className="stat-tile stat-average">
               <span>Average</span>
               <strong>{stats.average ?? '—'} mg/dL</strong>
             </div>
-            <div className="stat-tile">
+            <div className="stat-tile stat-maximum">
               <span>Maximum</span>
               <strong>{stats.maximum ?? '—'} mg/dL</strong>
             </div>
-            <div className="stat-tile">
+            <div className="stat-tile stat-minimum">
               <span>Minimum</span>
               <strong>{stats.minimum ?? '—'} mg/dL</strong>
             </div>
-            <div className="stat-tile highlight">
+            <div className="stat-tile highlight stat-count">
               <span>Readings</span>
               <strong>{stats.total_readings ?? 0}</strong>
             </div>
@@ -342,12 +382,12 @@ export default function PatientDashboard() {
           {report?.readings?.length ? (
             <div className="reading-list compact">
               {report.readings.map((reading) => (
-                <div key={reading.id} className="reading-item">
+                <div key={reading.id} className="reading-item report-reading-item">
                   <div>
                     <strong>{slotLabels[reading.time_slot]}</strong>
                     <small>{reading.reading_date}</small>
                   </div>
-                  <span>{reading.glucose_value} mg/dL</span>
+                  <span className="reading-value">{reading.glucose_value} mg/dL</span>
                 </div>
               ))}
             </div>
@@ -358,7 +398,7 @@ export default function PatientDashboard() {
       </div>
 
       <div className="dashboard-grid dashboard-grid-two bottom-grid">
-        <section className="card">
+        <section className="card patient-history-card" id="readings">
           <div className="section-header">
             <div>
               <p className="eyebrow">History</p>
@@ -384,7 +424,7 @@ export default function PatientDashboard() {
                   </div>
 
                   <div className="reading-meta">
-                    <span>{reading.glucose_value} mg/dL</span>
+                    <span className="reading-value">{reading.glucose_value} mg/dL</span>
                     <div className="mini-actions">
                       <button type="button" onClick={() => handleEdit(reading)} aria-label="Edit reading">
                         <PencilLine size={14} />
@@ -402,7 +442,7 @@ export default function PatientDashboard() {
           </div>
         </section>
 
-        <section className="card">
+        <section className="card patient-connections-card" id="care-team">
           <div className="section-header">
             <div>
               <p className="eyebrow">Connections</p>
@@ -439,7 +479,7 @@ export default function PatientDashboard() {
             </div>
           ) : null}
 
-          {connectionStatus ? <p className="success-banner">{connectionStatus}</p> : null}
+          {connectionStatus ? <p className="success-banner" role="status">{connectionStatus}</p> : null}
 
           <div className="request-panel">
             <h3>Sent requests</h3>
