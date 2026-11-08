@@ -96,7 +96,7 @@ const generateReport = (type, resolveUserId = (req) => req.user.id) => {
                 userId,
                 startDate,
                 endDate,
-                type === "daily"
+                true
             );
 
             return res.status(200).json({
@@ -107,9 +107,7 @@ const generateReport = (type, resolveUserId = (req) => req.user.id) => {
                         ...report.period,
                     },
                     statistics: report.statistics,
-                    ...(type === "daily" && {
-                        readings: report.readings,
-                    }),
+                    readings: report.readings,
                 },
             });
 

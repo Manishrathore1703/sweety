@@ -1069,6 +1069,84 @@ select:focus {
   color: var(--color-text-secondary);
 }
 
+.doctor-report-chart {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid #e8edf3;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fcfdff 0%, #fff 100%);
+}
+
+.doctor-report-chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.doctor-report-chart-heading h3 {
+  margin: 0;
+  color: var(--doctor-ink);
+  font-size: 0.95rem;
+}
+
+.doctor-report-chart-heading p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.doctor-report-chart-heading > span {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--doctor-blue-soft);
+  color: var(--doctor-blue);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.doctor-report-chart-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.doctor-report-chart-svg {
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+  overflow: visible;
+}
+
+.doctor-report-chart-svg .chart-grid-line {
+  stroke: #e8edf3;
+  stroke-dasharray: 4 5;
+  stroke-width: 1;
+}
+
+.doctor-report-chart-svg .chart-axis-label,
+.doctor-report-chart-svg .chart-category-label {
+  fill: #718096;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.doctor-report-chart-svg .chart-value-label {
+  fill: #34588b;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.doctor-report-chart-svg .chart-bar {
+  fill: #6288cf;
+  transition: fill var(--transition-fast);
+}
+
+.doctor-report-chart-svg .chart-bar:hover {
+  fill: #345fae;
+}
+
 .doctor-dashboard .reading-value {
   color: var(--color-primary-hover);
   font-size: 1rem;

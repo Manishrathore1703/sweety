@@ -24,7 +24,7 @@ const getGlucoseReport = async (
 
     let readings = [];
 
-    // Individual readings are needed for the daily report.
+    // Include readings for the selected period so reports can be charted.
     if (includeReadings) {
         const readingsResult = await pool.query(
             `SELECT
@@ -36,15 +36,16 @@ const getGlucoseReport = async (
                 updated_at
              FROM readings
              WHERE user_id = $1
-               AND reading_date = $2::date
+               AND reading_date BETWEEN $2::date AND $3::date
              ORDER BY
+                reading_date,
                 CASE time_slot
                     WHEN 'morning_fasting' THEN 1
                     WHEN 'after_breakfast' THEN 2
                     WHEN 'after_lunch' THEN 3
                     WHEN 'after_dinner' THEN 4
                 END`,
-            [userId, startDate]
+            [userId, startDate, endDate]
         );
 
         readings = readingsResult.rows;

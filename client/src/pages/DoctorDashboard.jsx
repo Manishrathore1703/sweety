@@ -152,6 +152,38 @@ export default function DoctorDashboard() {
     average: null,
     total_readings: 0,
   };
+  const chartReadings = report?.readings ?? [];
+  const chartData = reportType === 'daily'
+    ? chartReadings.map((reading) => ({
+      label: {
+        morning_fasting: 'Fasting',
+        after_breakfast: 'Breakfast',
+        after_lunch: 'Lunch',
+        after_dinner: 'Dinner',
+      }[reading.time_slot] ?? formatStatus(reading.time_slot),
+      detail: slotLabels[reading.time_slot] ?? formatStatus(reading.time_slot),
+      value: Number(reading.glucose_value),
+    }))
+    : Object.entries(
+      chartReadings.reduce((dailyReadings, reading) => {
+        const date = String(reading.reading_date).slice(0, 10);
+        const values = dailyReadings[date] ?? [];
+        values.push(Number(reading.glucose_value));
+        dailyReadings[date] = values;
+        return dailyReadings;
+      }, {})
+    ).map(([date, values]) => ({
+      label: Number(date.slice(-2)),
+      detail: date,
+      value: values.reduce((total, value) => total + value, 0) / values.length,
+    }));
+  const chartWidth = Math.max(560, chartData.length * 58);
+  const chartHeight = 280;
+  const chartTop = 28;
+  const chartBottom = 224;
+  const chartMax = Math.max(200, Math.ceil(Math.max(...chartData.map(({ value }) => value), 0) / 50) * 50);
+  const chartStep = chartMax / 4;
+  const chartBarWidth = Math.min(42, Math.max(24, chartWidth / Math.max(chartData.length, 1) * 0.56));
   const pendingRequestCount = [...sentRequests, ...receivedRequests]
     .filter((request) => request.status === 'pending').length;
   const displayName = user?.name || 'Doctor';
@@ -309,15 +341,15 @@ export default function DoctorDashboard() {
           {patients.length ? (
             <ul className="patient-list">
               {patients.map((patient) => (
-                <li key={patient.id} className="list-row">
+                <li key={patient.assignment_id} className="list-row">
                   <div>
-                    <strong>{patient.name}</strong>
-                    <small>{patient.email}</small>
+                    <strong>{patient.patient_name}</strong>
+                    <small>{patient.patient_email}</small>
                   </div>
                   <div className="mini-actions inline-actions">
                     <button type="button" className="secondary-button compact" onClick={() => {
-                      setSelectedPatientId(patient.id);
-                      loadPatientReport(patient.id);
+                      setSelectedPatientId(patient.patient_id);
+                      loadPatientReport(patient.patient_id);
                       navigate('/doctor/monitoring');
                     }}>
                       View report
@@ -420,7 +452,7 @@ export default function DoctorDashboard() {
             }}>
               <option value="">Choose a patient</option>
               {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>{patient.name}</option>
+                <option key={patient.patient_id} value={patient.patient_id}>{patient.patient_name}</option>
               ))}
             </select>
           </label>
@@ -473,6 +505,68 @@ export default function DoctorDashboard() {
                   <strong>{stats.total_readings ?? 0}</strong>
                 </div>
               </div>
+
+              {chartData.length ? (
+                <section className="doctor-report-chart" aria-label="Glucose reading chart">
+                  <div className="doctor-report-chart-heading">
+                    <div>
+                      <h3>{reportType === 'daily' ? 'Readings by time of day' : 'Daily average glucose'}</h3>
+                      <p>{reportType === 'daily' ? 'Each bar shows a recorded reading.' : 'Each bar shows the average of readings for that day.'}</p>
+                    </div>
+                    <span>mg/dL</span>
+                  </div>
+                  <div className="doctor-report-chart-scroll">
+                    <svg
+                      className="doctor-report-chart-svg"
+                      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                      role="img"
+                      aria-label={`${reportType === 'daily' ? 'Glucose readings by time of day' : 'Daily average glucose readings'} chart`}
+                    >
+                      <title>{reportType === 'daily' ? 'Glucose readings by time of day' : 'Daily average glucose readings'}</title>
+                      <desc>
+                        {chartData.map(({ detail, value }) => `${detail}: ${Math.round(value)} milligrams per deciliter`).join('; ')}
+                      </desc>
+                      {[0, 1, 2, 3, 4].map((step) => {
+                        const y = chartBottom - ((chartBottom - chartTop) * step) / 4;
+                        const value = Math.round(chartStep * step);
+                        return (
+                          <g key={step}>
+                            <line x1="42" y1={y} x2={chartWidth - 12} y2={y} className="chart-grid-line" />
+                            <text x="34" y={y + 4} textAnchor="end" className="chart-axis-label">{value}</text>
+                          </g>
+                        );
+                      })}
+                      {chartData.map(({ label, detail, value }, index) => {
+                        const groupWidth = (chartWidth - 58) / chartData.length;
+                        const x = 48 + groupWidth * index + (groupWidth - chartBarWidth) / 2;
+                        const height = Math.max(2, ((chartBottom - chartTop) * value) / chartMax);
+                        const y = chartBottom - height;
+                        return (
+                          <g key={`${label}-${index}`}>
+                            <title>{`${detail}: ${Math.round(value)} mg/dL`}</title>
+                            <rect
+                              x={x}
+                              y={y}
+                              width={chartBarWidth}
+                              height={height}
+                              rx="6"
+                              className="chart-bar"
+                            />
+                            <text x={x + chartBarWidth / 2} y={Math.max(chartTop - 8, y - 7)} textAnchor="middle" className="chart-value-label">
+                              {Math.round(value)}
+                            </text>
+                            <text x={x + chartBarWidth / 2} y={chartBottom + 22} textAnchor="middle" className="chart-category-label">
+                              {label}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+                </section>
+              ) : report ? (
+                <p className="empty-state">No readings to chart for the selected period.</p>
+              ) : null}
 
               {report?.readings?.length ? (
                 <div className="reading-list compact">

@@ -45,4 +45,36 @@ describe("report calculations", () => {
         });
         expect(pool.query).toHaveBeenCalledTimes(1);
     });
+
+    test("loads readings across the selected period for report charts", async () => {
+        pool.query
+            .mockResolvedValueOnce({
+                rows: [{
+                    maximum: 142,
+                    minimum: 91,
+                    average: 116.5,
+                    total_readings: 2,
+                }],
+            })
+            .mockResolvedValueOnce({
+                rows: [
+                    { reading_date: "2026-11-02", glucose_value: 91 },
+                    { reading_date: "2026-11-03", glucose_value: 142 },
+                ],
+            });
+
+        const report = await getGlucoseReport(
+            "12",
+            "2026-11-01",
+            "2026-11-07",
+            true
+        );
+
+        expect(report.readings).toHaveLength(2);
+        expect(pool.query).toHaveBeenNthCalledWith(
+            2,
+            expect.stringContaining("reading_date BETWEEN $2::date AND $3::date"),
+            ["12", "2026-11-01", "2026-11-07"]
+        );
+    });
 });
