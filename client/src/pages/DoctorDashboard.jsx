@@ -3,7 +3,7 @@ import { BarChart3, CheckCircle2, LogOut, Search, ShieldCheck, UserRound, XCircl
 import { useNavigate } from 'react-router-dom';
 import api, { getApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { getRequestDisplayName } from '../utils/dashboard';
+import { formatStatus, getRequestDisplayName, slotLabels } from '../utils/dashboard';
 
 const today = new Date().toISOString().slice(0, 10);
 const reportTypes = [
@@ -247,7 +247,7 @@ export default function DoctorDashboard() {
                 {sentRequests.map((request) => (
                   <li key={request.id}>
                     <span>{getRequestDisplayName(request)}</span>
-                    <span className={`status-pill ${request.status}`}>{request.status}</span>
+                    <span className={`status-pill ${request.status}`}>{formatStatus(request.status)}</span>
                     {request.status === 'pending' ? (
                       <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'cancel')}>
                         Cancel
@@ -268,7 +268,7 @@ export default function DoctorDashboard() {
                 {receivedRequests.map((request) => (
                   <li key={request.id}>
                     <span>{getRequestDisplayName(request)}</span>
-                    <span className={`status-pill ${request.status}`}>{request.status}</span>
+                    <span className={`status-pill ${request.status}`}>{formatStatus(request.status)}</span>
                     {request.status === 'pending' ? (
                       <div className="mini-actions inline-actions">
                         <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'accept')}>Accept</button>
@@ -365,7 +365,7 @@ export default function DoctorDashboard() {
                   {report.readings.map((reading) => (
                     <div key={reading.id} className="reading-item">
                       <div>
-                        <strong>{reading.time_slot}</strong>
+                        <strong>{slotLabels[reading.time_slot] ?? formatStatus(reading.time_slot)}</strong>
                         <small>{reading.reading_date}</small>
                       </div>
                       <span>{reading.glucose_value} mg/dL</span>

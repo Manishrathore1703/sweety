@@ -26,9 +26,23 @@ const allowedOrigins = (process.env.CLIENT_URL || "")
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+const isLocalDevOrigin = (origin) => {
+    try {
+        const { hostname } = new URL(origin);
+
+        if (["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(hostname)) {
+            return true;
+        }
+
+        return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostname);
+    } catch {
+        return false;
+    }
+};
+
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin) || isLocalDevOrigin(origin)) {
             return callback(null, true);
         }
 

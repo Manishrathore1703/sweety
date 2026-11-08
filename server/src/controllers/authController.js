@@ -95,18 +95,18 @@ const register = async (req, res) => {
             });
         }
 
-        if (
-            role === "doctor" &&
-            !matchesDoctorRegistrationCode(
-                doctorRegistrationCode,
-                process.env.DOCTOR_REGISTRATION_CODE
-            )
-        ) {
-            return res.status(403).json({
-                success: false,
-                message: "A valid doctor registration code is required",
-            });
-        }
+        // if (
+        //     role === "doctor" &&
+        //     !matchesDoctorRegistrationCode(
+        //         doctorRegistrationCode,
+        //         process.env.DOCTOR_REGISTRATION_CODE
+        //     )
+        // ) {
+        //     return res.status(403).json({
+        //         success: false,
+        //         message: "A valid doctor registration code is required",
+        //     });
+        // }
 
         // 5. Check whether email already exists
         const existingUser = await pool.query(

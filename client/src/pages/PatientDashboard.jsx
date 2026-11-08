@@ -3,7 +3,7 @@ import { BarChart3, CalendarRange, Clock3, LogOut, PencilLine, PlusCircle, Searc
 import { useNavigate } from 'react-router-dom';
 import api, { getApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { getRequestDisplayName, slotLabels } from '../utils/dashboard';
+import { formatStatus, getRequestDisplayName, slotLabels } from '../utils/dashboard';
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -448,7 +448,7 @@ export default function PatientDashboard() {
                 {sentRequests.map((request) => (
                   <li key={request.id}>
                     <span>{getRequestDisplayName(request)}</span>
-                    <span className={`status-pill ${request.status}`}>{request.status}</span>
+                    <span className={`status-pill ${request.status}`}>{formatStatus(request.status)}</span>
                     {request.status === 'pending' ? (
                       <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'cancel')}>
                         Cancel
@@ -469,7 +469,7 @@ export default function PatientDashboard() {
                 {receivedRequests.map((request) => (
                   <li key={request.id}>
                     <span>{getRequestDisplayName(request)}</span>
-                    <span className={`status-pill ${request.status}`}>{request.status}</span>
+                    <span className={`status-pill ${request.status}`}>{formatStatus(request.status)}</span>
                     {request.status === 'pending' ? (
                       <div className="mini-actions inline-actions">
                         <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'accept')}>Accept</button>

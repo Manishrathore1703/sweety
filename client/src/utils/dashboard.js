@@ -6,7 +6,7 @@ export const slotLabels = {
 };
 
 export const getRequestDisplayName = (request) => {
-  return request?.other_user_name || request?.other_user_email || 'Request contact';
+  return request?.other_user_name || request?.other_user_email || request?.initiator_name || request?.recipient_name || 'Request contact';
 };
 
 export const formatStatus = (status) => {
@@ -14,5 +14,7 @@ export const formatStatus = (status) => {
     return 'unknown';
   }
 
-  return String(status).replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+  return String(status)
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 };
