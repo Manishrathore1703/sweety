@@ -19,6 +19,8 @@ export default function DoctorDashboard() {
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [searchEmail, setSearchEmail] = useState('');
+
+  const getRequestLabel = (request) => request.other_user_name || request.other_user_email || 'Request contact';
   const [patientLookup, setPatientLookup] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -245,7 +247,7 @@ export default function DoctorDashboard() {
               <ul>
                 {sentRequests.map((request) => (
                   <li key={request.id}>
-                    <span>{request.recipient_name || request.patient_email || request.doctor_email}</span>
+                    <span>{getRequestLabel(request)}</span>
                     <span className="status-pill">{request.status}</span>
                     {request.status === 'pending' ? (
                       <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'cancel')}>
@@ -266,7 +268,7 @@ export default function DoctorDashboard() {
               <ul>
                 {receivedRequests.map((request) => (
                   <li key={request.id}>
-                    <span>{request.initiator_name || request.patient_email || request.doctor_email}</span>
+                    <span>{getRequestLabel(request)}</span>
                     <span className="status-pill">{request.status}</span>
                     {request.status === 'pending' ? (
                       <div className="mini-actions inline-actions">

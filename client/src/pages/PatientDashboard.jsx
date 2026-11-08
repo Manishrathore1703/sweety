@@ -43,6 +43,8 @@ export default function PatientDashboard() {
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
 
+  const getRequestLabel = (request) => request.other_user_name || request.other_user_email || 'Request contact';
+
   const loadReadings = async (date = null) => {
     try {
       const response = await api.get('/readings', {
@@ -453,7 +455,7 @@ export default function PatientDashboard() {
               <ul>
                 {sentRequests.map((request) => (
                   <li key={request.id}>
-                    <span>{request.recipient_name || request.patient_email || request.doctor_email}</span>
+                    <span>{getRequestLabel(request)}</span>
                     <span className="status-pill">{request.status}</span>
                     {request.status === 'pending' ? (
                       <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'cancel')}>
@@ -474,7 +476,7 @@ export default function PatientDashboard() {
               <ul>
                 {receivedRequests.map((request) => (
                   <li key={request.id}>
-                    <span>{request.initiator_name || request.patient_email || request.doctor_email}</span>
+                    <span>{getRequestLabel(request)}</span>
                     <span className="status-pill">{request.status}</span>
                     {request.status === 'pending' ? (
                       <div className="mini-actions inline-actions">

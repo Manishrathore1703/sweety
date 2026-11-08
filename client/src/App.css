@@ -217,6 +217,92 @@ select:focus {
   color: #166534;
 }
 
+.landing-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #edf9ff 0%, #fdf2f8 100%);
+  padding: 24px 20px 64px;
+}
+
+.landing-header {
+  max-width: 1200px;
+  margin: 0 auto 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-hero {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+.landing-copy {
+  max-width: 760px;
+  text-align: center;
+}
+
+.landing-copy h1 {
+  font-size: clamp(2.5rem, 5vw, 4.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  margin: 0 0 20px;
+  color: #0f172a;
+}
+
+.hero-subtext {
+  font-size: 1.08rem;
+  color: #475569;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.cta-row {
+  margin-top: 28px;
+  display: flex;
+  justify-content: center;
+}
+
+.feature-grid {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 20px 16px;
+  text-align: left;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+}
+
+.feature-card svg {
+  color: #8b5cf6;
+}
+
+.feature-card h3 {
+  margin: 18px 0 10px;
+  color: #0f172a;
+}
+
+.feature-card p {
+  color: #475569;
+}
+
 .page-shell {
   max-width: 1200px;
   margin: 0 auto;

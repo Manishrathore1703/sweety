@@ -3,13 +3,18 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
 import DoctorDashboard from './pages/DoctorDashboard';
+import LandingPage from './pages/LandingPage';
 import PatientDashboard from './pages/PatientDashboard';
 import './App.css';
 
 function RootRedirect() {
   const { user } = useAuth();
 
-  return <Navigate to={user?.role === 'doctor' ? '/doctor' : '/patient'} replace />;
+  if (!user) {
+    return <LandingPage />;
+  }
+
+  return <Navigate to={user.role === 'doctor' ? '/doctor' : '/patient'} replace />;
 }
 
 function App() {
@@ -17,10 +22,11 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/auth" element={<AuthPage />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<RootRedirect />} />
+            <Route path="/dashboard" element={<RootRedirect />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
