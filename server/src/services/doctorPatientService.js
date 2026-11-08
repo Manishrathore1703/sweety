@@ -31,6 +31,39 @@ const findUserByEmail = async (role, email) => {
     return result.rows[0] || null;
 };
 
+const listUsersByRole = async (role, userId, limit, offset) => {
+    const result = await pool.query(
+        `WITH role_users AS MATERIALIZED (
+             SELECT id, name, email
+             FROM users
+             WHERE role = $1 AND id <> $2
+         ),
+         user_count AS (
+             SELECT COUNT(*)::int AS total
+             FROM role_users
+         ),
+         paged_users AS (
+             SELECT id, name, email
+             FROM role_users
+             ORDER BY name, id
+             LIMIT $3 OFFSET $4
+         )
+         SELECT paged_users.id, paged_users.name, paged_users.email,
+                user_count.total
+         FROM user_count
+         LEFT JOIN paged_users ON TRUE
+         ORDER BY paged_users.name NULLS LAST, paged_users.id NULLS LAST`,
+        [role, userId, limit, offset]
+    );
+
+    return {
+        users: result.rows
+            .filter((row) => row.id !== null)
+            .map(({ id, name, email }) => ({ id, name, email })),
+        total: result.rows.length > 0 ? result.rows[0].total : 0,
+    };
+};
+
 const createRequest = async (user, email) => withTransaction(async (client) => {
     const recipientRole = user.role === "doctor" ? "patient" : "doctor";
     const targetResult = await client.query(
@@ -267,6 +300,7 @@ const hasActiveAssignment = async (doctorId, patientId) => {
 
 module.exports = {
     findUserByEmail,
+    listUsersByRole,
     createRequest,
     listRequests,
     changeRequestStatus,

@@ -7,7 +7,6 @@ import {
   HeartPulse,
   LayoutDashboard,
   LogOut,
-  Search,
   ShieldCheck,
   UserPlus,
   Users,
@@ -33,8 +32,14 @@ export default function DoctorDashboard() {
   const [history, setHistory] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
-  const [searchEmail, setSearchEmail] = useState('');
-  const [patientLookup, setPatientLookup] = useState(null);
+  const [selectablePatients, setSelectablePatients] = useState([]);
+  const [selectablePatientsLoading, setSelectablePatientsLoading] = useState(false);
+  const [selectablePatientsError, setSelectablePatientsError] = useState('');
+  const [patientSearch, setPatientSearch] = useState('');
+  const [patientPage, setPatientPage] = useState(1);
+  const [patientPagination, setPatientPagination] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [sendingPatientRequest, setSendingPatientRequest] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusIsError, setStatusIsError] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -42,6 +47,15 @@ export default function DoctorDashboard() {
   const [reportDate, setReportDate] = useState(today);
   const [report, setReport] = useState(null);
   const [error, setError] = useState('');
+
+  const clearVisibleErrors = () => {
+    setError('');
+    setSelectablePatientsError('');
+    if (statusIsError) {
+      setStatusMessage('');
+      setStatusIsError(false);
+    }
+  };
 
   const fetchDoctorData = async () => {
     try {
@@ -65,43 +79,70 @@ export default function DoctorDashboard() {
     fetchDoctorData();
   }, []);
 
-  const searchPatient = async (event) => {
-    event.preventDefault();
-    setStatusMessage('');
-    setStatusIsError(false);
-    setPatientLookup(null);
-
-    try {
-      const response = await api.get('/patients/search', {
-        params: { email: searchEmail },
-      });
-      setPatientLookup(response.data.patient);
-      if (!response.data.patient) {
-        setStatusIsError(true);
-        setStatusMessage('No patient matched that email.');
-      }
-    } catch (caughtError) {
-      setError(getApiError(caughtError));
+  useEffect(() => {
+    if (section !== 'invite') {
+      return undefined;
     }
-  };
+
+    let active = true;
+    const loadSelectablePatients = async () => {
+      setSelectablePatientsLoading(true);
+      setSelectablePatientsError('');
+
+      try {
+        const response = await api.get('/patients', {
+          params: { page: patientPage, limit: 50 },
+        });
+
+        if (!Array.isArray(response.data.data) || !response.data.pagination) {
+          throw new Error('Unable to fetch patients');
+        }
+
+        if (active) {
+          setSelectablePatients(response.data.data);
+          setPatientPagination(response.data.pagination);
+        }
+      } catch (caughtError) {
+        if (active) {
+          setSelectablePatients([]);
+          setPatientPagination(null);
+          setSelectablePatientsError(getApiError(caughtError));
+        }
+      } finally {
+        if (active) {
+          setSelectablePatientsLoading(false);
+        }
+      }
+    };
+
+    loadSelectablePatients();
+    return () => {
+      active = false;
+    };
+  }, [patientPage, section]);
 
   const invitePatient = async () => {
-    if (!patientLookup) {
-      setStatusMessage('Search for a patient before sending an invitation.');
+    if (!selectedPatient || sendingPatientRequest) {
       return;
     }
 
+    setSendingPatientRequest(true);
+    setStatusMessage('');
+    setStatusIsError(false);
     try {
       const response = await api.post('/doctor-requests', {
-        patient_email: patientLookup.email,
+        patient_email: selectedPatient.email,
       });
       setStatusIsError(false);
       setStatusMessage(response.data.message);
-      setPatientLookup(null);
-      setSearchEmail('');
+      setSelectedPatient(null);
+      setPatientSearch('');
       await fetchDoctorData();
     } catch (caughtError) {
-      setError(getApiError(caughtError));
+      setStatusIsError(true);
+      setStatusMessage(getApiError(caughtError));
+    } finally {
+      setSendingPatientRequest(false);
     }
   };
 
@@ -186,6 +227,13 @@ export default function DoctorDashboard() {
   const chartBarWidth = Math.min(42, Math.max(24, chartWidth / Math.max(chartData.length, 1) * 0.56));
   const pendingRequestCount = [...sentRequests, ...receivedRequests]
     .filter((request) => request.status === 'pending').length;
+  const filteredSelectablePatients = selectablePatients.filter((patient) => {
+    const searchTerm = patientSearch.trim().toLowerCase();
+    return !searchTerm ||
+      patient.name.toLowerCase().includes(searchTerm) ||
+      patient.email.toLowerCase().includes(searchTerm);
+  });
+  const patientTotalPages = patientPagination?.totalPages ?? 0;
   const displayName = user?.name || 'Doctor';
   const firstName = displayName.split(' ')[0];
   const validSections = ['overview', 'invite', 'assignments', 'requests', 'monitoring', 'history'];
@@ -202,7 +250,7 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="page-shell doctor-dashboard">
+    <div className="page-shell doctor-dashboard" onClickCapture={clearVisibleErrors}>
       <nav className="doctor-navbar" aria-label="Doctor dashboard">
         <Link className="doctor-brand" to="/doctor" aria-label="Sweety doctor dashboard home">
           <span className="doctor-brand-icon"><HeartPulse size={20} /></span>
@@ -290,28 +338,91 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          <form className="inline-search" onSubmit={searchPatient}>
+          <label className="selection-search">
+            <span>Find a patient by name or email</span>
             <input
-              type="email"
-              value={searchEmail}
-              onChange={(event) => setSearchEmail(event.target.value)}
-              placeholder="patient@example.com"
-              aria-label="Search for a patient by email"
+              type="search"
+              value={patientSearch}
+              onChange={(event) => {
+                setPatientSearch(event.target.value);
+                setSelectedPatient(null);
+                setStatusMessage('');
+              }}
+              placeholder="Search patients"
+              aria-label="Filter patients by name or email"
             />
-            <button type="submit" className="primary-button compact">
-              <Search size={16} />
-              Search
-            </button>
-          </form>
+          </label>
 
-          {patientLookup ? (
-            <div className="result-box">
+          {selectablePatientsLoading ? (
+            <p className="selection-message" role="status">Loading patients…</p>
+          ) : selectablePatientsError ? (
+            <p className="error-banner" role="alert">{selectablePatientsError}</p>
+          ) : selectablePatients.length === 0 ? (
+            <p className="empty-state">No registered patients are available yet.</p>
+          ) : filteredSelectablePatients.length === 0 ? (
+            <p className="empty-state">No patients match your search on this page.</p>
+          ) : (
+            <ul className="selection-list" aria-label="Registered patients">
+              {filteredSelectablePatients.map((patient) => (
+                <li key={patient.id}>
+                  <button
+                    type="button"
+                    className={`selection-option${selectedPatient?.id === patient.id ? ' selected' : ''}`}
+                    aria-pressed={selectedPatient?.id === patient.id}
+                    onClick={() => {
+                      setSelectedPatient(patient);
+                      setStatusMessage('');
+                    }}
+                  >
+                    <strong>{patient.name}</strong>
+                    <span>{patient.email}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {patientTotalPages > 1 ? (
+            <div className="selection-pagination" aria-label="Patient list pagination">
+              <button
+                type="button"
+                className="secondary-button compact"
+                disabled={selectablePatientsLoading || patientPage <= 1}
+                onClick={() => {
+                  setSelectedPatient(null);
+                  setPatientPage((page) => page - 1);
+                }}
+              >
+                Previous
+              </button>
+              <span>Page {patientPage} of {patientTotalPages}</span>
+              <button
+                type="button"
+                className="secondary-button compact"
+                disabled={selectablePatientsLoading || patientPage >= patientTotalPages}
+                onClick={() => {
+                  setSelectedPatient(null);
+                  setPatientPage((page) => page + 1);
+                }}
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
+
+          {selectedPatient ? (
+            <div className="result-box selection-result">
               <div>
-                <strong>{patientLookup.name}</strong>
-                <p>{patientLookup.email}</p>
+                <strong>{selectedPatient.name}</strong>
+                <p>{selectedPatient.email}</p>
               </div>
-              <button type="button" className="primary-button compact" onClick={invitePatient}>
-                Send invite
+              <button
+                type="button"
+                className="primary-button compact"
+                disabled={sendingPatientRequest}
+                onClick={invitePatient}
+              >
+                {sendingPatientRequest ? 'Sending…' : 'Send request'}
               </button>
             </div>
           ) : null}
@@ -440,53 +551,54 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          <label>
-            <span>Select patient</span>
-            <select value={selectedPatientId} onChange={(event) => {
-              const nextId = event.target.value;
-              setSelectedPatientId(nextId);
-              setReport(null);
-              if (nextId) {
-                loadPatientReport(nextId);
-              }
-            }}>
-              <option value="">Choose a patient</option>
-              {patients.map((patient) => (
-                <option key={patient.patient_id} value={patient.patient_id}>{patient.patient_name}</option>
-              ))}
-            </select>
-          </label>
+          <div className="selector-row doctor-report-controls">
+            <label>
+              <span>Select patient</span>
+              <select value={selectedPatientId} onChange={(event) => {
+                const nextId = event.target.value;
+                setSelectedPatientId(nextId);
+                setReport(null);
+                if (nextId) {
+                  loadPatientReport(nextId);
+                }
+              }}>
+                <option value="">Choose a patient</option>
+                {patients.map((patient) => (
+                  <option key={patient.patient_id} value={patient.patient_id}>{patient.patient_name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Period</span>
+              <select value={reportType} disabled={!selectedPatientId} onChange={(event) => {
+                const nextType = event.target.value;
+                setReportType(nextType);
+                loadPatientReport(selectedPatientId, nextType, reportDate);
+              }}>
+                {reportTypes.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Date</span>
+              <input
+                type="date"
+                value={reportDate}
+                disabled={!selectedPatientId}
+                onChange={(event) => {
+                  const nextDate = event.target.value;
+                  setReportDate(nextDate);
+                  loadPatientReport(selectedPatientId, reportType, nextDate);
+                }}
+              />
+            </label>
+          </div>
 
           {selectedPatientId ? (
             <>
-              <div className="selector-row">
-                <label>
-                  <span>Period</span>
-                  <select value={reportType} onChange={(event) => {
-                    const nextType = event.target.value;
-                    setReportType(nextType);
-                    loadPatientReport(selectedPatientId, nextType, reportDate);
-                  }}>
-                    {reportTypes.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  <span>Date</span>
-                  <input
-                    type="date"
-                    value={reportDate}
-                    onChange={(event) => {
-                      const nextDate = event.target.value;
-                      setReportDate(nextDate);
-                      loadPatientReport(selectedPatientId, reportType, nextDate);
-                    }}
-                  />
-                </label>
-              </div>
-
               <div className="stats-grid">
                 <div className="stat-tile stat-average">
                   <span>Average</span>

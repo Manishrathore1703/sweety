@@ -6,6 +6,19 @@ const controller = require("../controllers/doctorPatientController");
 const router = express.Router();
 
 router.get(
+    "/doctors",
+    authenticateUser,
+    authorizeRoles("patient"),
+    controller.listDoctors
+);
+router.get(
+    "/patients",
+    authenticateUser,
+    authorizeRoles("doctor"),
+    controller.listPatients
+);
+
+router.get(
     "/patients/search",
     authenticateUser,
     authorizeRoles("doctor"),

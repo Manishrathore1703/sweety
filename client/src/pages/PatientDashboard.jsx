@@ -9,7 +9,6 @@ import {
   LogOut,
   PencilLine,
   PlusCircle,
-  Search,
   Trash2,
   UserRound,
 } from 'lucide-react';
@@ -45,11 +44,27 @@ export default function PatientDashboard() {
   const [reportType, setReportType] = useState('daily');
   const [reportDate, setReportDate] = useState(today);
   const [report, setReport] = useState(null);
-  const [doctorEmail, setDoctorEmail] = useState('');
-  const [doctorLookup, setDoctorLookup] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(false);
+  const [doctorsError, setDoctorsError] = useState('');
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [doctorPage, setDoctorPage] = useState(1);
+  const [doctorPagination, setDoctorPagination] = useState(null);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [sendingDoctorRequest, setSendingDoctorRequest] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('');
+  const [connectionStatusIsError, setConnectionStatusIsError] = useState(false);
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
+
+  const clearVisibleErrors = () => {
+    setError('');
+    setDoctorsError('');
+    if (connectionStatusIsError) {
+      setConnectionStatus('');
+      setConnectionStatusIsError(false);
+    }
+  };
 
   const loadReadings = async (date = null) => {
     try {
@@ -100,6 +115,48 @@ export default function PatientDashboard() {
 
     initialize();
   }, []);
+
+  useEffect(() => {
+    if (section !== 'connections') {
+      return undefined;
+    }
+
+    let active = true;
+    const loadDoctors = async () => {
+      setDoctorsLoading(true);
+      setDoctorsError('');
+
+      try {
+        const response = await api.get('/doctors', {
+          params: { page: doctorPage, limit: 50 },
+        });
+
+        if (!Array.isArray(response.data.data) || !response.data.pagination) {
+          throw new Error('Unable to fetch doctors');
+        }
+
+        if (active) {
+          setDoctors(response.data.data);
+          setDoctorPagination(response.data.pagination);
+        }
+      } catch (caughtError) {
+        if (active) {
+          setDoctors([]);
+          setDoctorPagination(null);
+          setDoctorsError(getApiError(caughtError));
+        }
+      } finally {
+        if (active) {
+          setDoctorsLoading(false);
+        }
+      }
+    };
+
+    loadDoctors();
+    return () => {
+      active = false;
+    };
+  }, [doctorPage, section]);
 
   const handleFormChange = (event) => {
     const { name, value } = event.target;
@@ -155,39 +212,27 @@ export default function PatientDashboard() {
     }
   };
 
-  const searchDoctor = async (event) => {
-    event.preventDefault();
-    setConnectionStatus('');
-
-    try {
-      const response = await api.get('/doctors/search', {
-        params: { email: doctorEmail },
-      });
-      setDoctorLookup(response.data.doctor);
-      if (!response.data.doctor) {
-        setConnectionStatus('No matching doctor was found for that email.');
-      }
-    } catch (caughtError) {
-      setError(getApiError(caughtError));
-    }
-  };
-
   const sendConnectionRequest = async () => {
-    if (!doctorLookup) {
-      setConnectionStatus('Search for a doctor before sending a request.');
+    if (!selectedDoctor || sendingDoctorRequest) {
       return;
     }
 
+    setSendingDoctorRequest(true);
+    setConnectionStatus('');
+    setConnectionStatusIsError(false);
     try {
       const response = await api.post('/doctor-requests', {
-        doctor_email: doctorLookup.email,
+        doctor_email: selectedDoctor.email,
       });
       setConnectionStatus(response.data.message);
-      setDoctorLookup(null);
-      setDoctorEmail('');
+      setSelectedDoctor(null);
+      setDoctorSearch('');
       await loadRequests();
     } catch (caughtError) {
-      setError(getApiError(caughtError));
+      setConnectionStatus(getApiError(caughtError));
+      setConnectionStatusIsError(true);
+    } finally {
+      setSendingDoctorRequest(false);
     }
   };
 
@@ -239,6 +284,13 @@ export default function PatientDashboard() {
   const chartMax = Math.max(200, Math.ceil(Math.max(...chartData.map(({ value }) => value), 0) / 50) * 50);
   const chartStep = chartMax / 4;
   const chartBarWidth = Math.min(42, Math.max(24, chartWidth / Math.max(chartData.length, 1) * 0.56));
+  const filteredDoctors = doctors.filter((doctor) => {
+    const searchTerm = doctorSearch.trim().toLowerCase();
+    return !searchTerm ||
+      doctor.name.toLowerCase().includes(searchTerm) ||
+      doctor.email.toLowerCase().includes(searchTerm);
+  });
+  const doctorTotalPages = doctorPagination?.totalPages ?? 0;
   const displayName = user?.name || 'Patient';
   const firstName = displayName.split(' ')[0];
   const validSections = ['overview', 'entry', 'reports', 'history', 'connections'];
@@ -259,7 +311,7 @@ export default function PatientDashboard() {
   return (
     <div
       className="page-shell patient-dashboard"
-      onClickCapture={() => setError('')}
+      onClickCapture={clearVisibleErrors}
       onChangeCapture={() => setError('')}
     >
       <nav className="patient-navbar" aria-label="Patient dashboard">
@@ -624,33 +676,100 @@ export default function PatientDashboard() {
             </div>
           </div>
 
-          <form className="inline-search" onSubmit={searchDoctor}>
+          <label className="selection-search">
+            <span>Find a doctor by name or email</span>
             <input
-              type="email"
-              value={doctorEmail}
-              onChange={(event) => setDoctorEmail(event.target.value)}
-              placeholder="doctor@example.com"
-              aria-label="Search for a doctor by email"
+              type="search"
+              value={doctorSearch}
+              onChange={(event) => {
+                setDoctorSearch(event.target.value);
+                setSelectedDoctor(null);
+                setConnectionStatus('');
+              }}
+              placeholder="Search doctors"
+              aria-label="Filter doctors by name or email"
             />
-            <button type="submit" className="primary-button compact">
-              <Search size={16} />
-              Search
-            </button>
-          </form>
+          </label>
 
-          {doctorLookup ? (
-            <div className="result-box">
-              <div>
-                <strong>{doctorLookup.name}</strong>
-                <p>{doctorLookup.email}</p>
-              </div>
-              <button type="button" className="primary-button compact" onClick={sendConnectionRequest}>
-                Send request
+          {doctorsLoading ? (
+            <p className="selection-message" role="status">Loading doctors…</p>
+          ) : doctorsError ? (
+            <p className="error-banner" role="alert">{doctorsError}</p>
+          ) : doctors.length === 0 ? (
+            <p className="empty-state">No registered doctors are available yet.</p>
+          ) : filteredDoctors.length === 0 ? (
+            <p className="empty-state">No doctors match your search on this page.</p>
+          ) : (
+            <ul className="selection-list" aria-label="Registered doctors">
+              {filteredDoctors.map((doctor) => (
+                <li key={doctor.id}>
+                  <button
+                    type="button"
+                    className={`selection-option${selectedDoctor?.id === doctor.id ? ' selected' : ''}`}
+                    aria-pressed={selectedDoctor?.id === doctor.id}
+                    onClick={() => {
+                      setSelectedDoctor(doctor);
+                      setConnectionStatus('');
+                    }}
+                  >
+                    <strong>{doctor.name}</strong>
+                    <span>{doctor.email}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {doctorTotalPages > 1 ? (
+            <div className="selection-pagination" aria-label="Doctor list pagination">
+              <button
+                type="button"
+                className="secondary-button compact"
+                disabled={doctorsLoading || doctorPage <= 1}
+                onClick={() => {
+                  setSelectedDoctor(null);
+                  setDoctorPage((page) => page - 1);
+                }}
+              >
+                Previous
+              </button>
+              <span>Page {doctorPage} of {doctorTotalPages}</span>
+              <button
+                type="button"
+                className="secondary-button compact"
+                disabled={doctorsLoading || doctorPage >= doctorTotalPages}
+                onClick={() => {
+                  setSelectedDoctor(null);
+                  setDoctorPage((page) => page + 1);
+                }}
+              >
+                Next
               </button>
             </div>
           ) : null}
 
-          {connectionStatus ? <p className="success-banner" role="status">{connectionStatus}</p> : null}
+          {selectedDoctor ? (
+            <div className="result-box selection-result">
+              <div>
+                <strong>{selectedDoctor.name}</strong>
+                <p>{selectedDoctor.email}</p>
+              </div>
+              <button
+                type="button"
+                className="primary-button compact"
+                disabled={sendingDoctorRequest}
+                onClick={sendConnectionRequest}
+              >
+                {sendingDoctorRequest ? 'Sending…' : 'Send request'}
+              </button>
+            </div>
+          ) : null}
+
+          {connectionStatus ? (
+            <p className={connectionStatusIsError ? 'error-banner' : 'success-banner'} role={connectionStatusIsError ? 'alert' : 'status'}>
+              {connectionStatus}
+            </p>
+          ) : null}
 
           <div className="request-panel">
             <h3>Sent requests</h3>

@@ -43,8 +43,16 @@ Empty statistics have null maximum, minimum, and average, and count zero.
 
 | Method and path | Auth / role | Inputs | Success | Common errors |
 |---|---|---|---|---|
+| `GET /api/doctors` | Patient | Optional `page` (default 1), `limit` (default 20, max 50) | 200 `{success,data:[{id,name,email}],pagination:{page,limit,total,totalPages}}` | 400 invalid pagination; 401; 403 |
+| `GET /api/patients` | Doctor | Optional `page` (default 1), `limit` (default 20, max 50) | 200 `{success,data:[{id,name,email}],pagination:{page,limit,total,totalPages}}` | 400 invalid pagination; 401; 403 |
 | `GET /api/patients/search?email=...` | Doctor | Required email query | 200 `{success,patient}`; `patient` is null when absent | 400 invalid/missing email; 401; 403 |
 | `GET /api/doctors/search?email=...` | Patient | Required email query | 200 `{success,doctor}`; `doctor` is null when absent | 400 invalid/missing email; 401; 403 |
+
+List endpoints return only registered users of the requested role, exclude the
+authenticated user, and order results by name and then ID for stable pages.
+Pagination values must be positive integers; `limit` cannot exceed 50.
+Invalid values return 400. The list response never includes role or password
+fields.
 
 Search matches exact email case-insensitively and only returns id, name, email,
 and role. It does not expose readings or password hashes.

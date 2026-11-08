@@ -12,6 +12,37 @@ const getSearchEmail = (value) => {
     return value.trim().toLowerCase();
 };
 
+const getPagination = (query) => {
+    const rawPage = query.page ?? "1";
+    const rawLimit = query.limit ?? "20";
+
+    if (
+        typeof rawPage !== "string" ||
+        !/^\d+$/.test(rawPage) ||
+        typeof rawLimit !== "string" ||
+        !/^\d+$/.test(rawLimit)
+    ) {
+        return null;
+    }
+
+    const page = Number(rawPage);
+    const limit = Number(rawLimit);
+    const offset = (page - 1) * limit;
+
+    if (
+        !Number.isSafeInteger(page) ||
+        page < 1 ||
+        !Number.isSafeInteger(limit) ||
+        limit < 1 ||
+        limit > 50 ||
+        !Number.isSafeInteger(offset)
+    ) {
+        return null;
+    }
+
+    return { page, limit, offset };
+};
+
 const mapServiceError = (error) => {
     const errors = {
         "target-not-found": [404, "Account not found for the requested role"],
@@ -53,6 +84,42 @@ const searchDoctors = async (req, res) => {
         success: true,
         doctor,
     });
+};
+
+const listUsersByRole = (role, resource) => async (req, res) => {
+    const pagination = getPagination(req.query);
+    if (!pagination) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid pagination parameters",
+        });
+    }
+
+    try {
+        const { users, total } = await doctorPatientService.listUsersByRole(
+            role,
+            req.user.id,
+            pagination.limit,
+            pagination.offset
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: users,
+            pagination: {
+                page: pagination.page,
+                limit: pagination.limit,
+                total: Number(total),
+                totalPages: Math.ceil(Number(total) / pagination.limit),
+            },
+        });
+    } catch (error) {
+        console.error(`Fetch ${resource} error:`, error);
+        return res.status(500).json({
+            success: false,
+            message: `Unable to fetch ${resource}`,
+        });
+    }
 };
 
 const createRequest = async (req, res) => {
@@ -139,6 +206,8 @@ const endAssignment = async (req, res) => {
 module.exports = {
     searchPatients,
     searchDoctors,
+    listDoctors: listUsersByRole("doctor", "doctors"),
+    listPatients: listUsersByRole("patient", "patients"),
     createRequest,
     listSentRequests,
     listReceivedRequests,
