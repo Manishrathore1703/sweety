@@ -207,6 +207,38 @@ export default function PatientDashboard() {
     average: null,
     total_readings: 0,
   };
+  const chartReadings = report?.readings ?? [];
+  const chartData = reportType === 'daily'
+    ? chartReadings.map((reading) => ({
+      label: {
+        morning_fasting: 'Fasting',
+        after_breakfast: 'Breakfast',
+        after_lunch: 'Lunch',
+        after_dinner: 'Dinner',
+      }[reading.time_slot] ?? formatStatus(reading.time_slot),
+      detail: slotLabels[reading.time_slot] ?? formatStatus(reading.time_slot),
+      value: Number(reading.glucose_value),
+    }))
+    : Object.entries(
+      chartReadings.reduce((dailyReadings, reading) => {
+        const date = String(reading.reading_date).slice(0, 10);
+        const values = dailyReadings[date] ?? [];
+        values.push(Number(reading.glucose_value));
+        dailyReadings[date] = values;
+        return dailyReadings;
+      }, {})
+    ).map(([date, values]) => ({
+      label: Number(date.slice(-2)),
+      detail: date,
+      value: values.reduce((total, value) => total + value, 0) / values.length,
+    }));
+  const chartWidth = Math.max(560, chartData.length * 58);
+  const chartHeight = 280;
+  const chartTop = 28;
+  const chartBottom = 224;
+  const chartMax = Math.max(200, Math.ceil(Math.max(...chartData.map(({ value }) => value), 0) / 50) * 50);
+  const chartStep = chartMax / 4;
+  const chartBarWidth = Math.min(42, Math.max(24, chartWidth / Math.max(chartData.length, 1) * 0.56));
   const displayName = user?.name || 'Patient';
   const firstName = displayName.split(' ')[0];
   const validSections = ['overview', 'entry', 'reports', 'history', 'connections'];
@@ -225,7 +257,11 @@ export default function PatientDashboard() {
   }
 
   return (
-    <div className="page-shell patient-dashboard">
+    <div
+      className="page-shell patient-dashboard"
+      onClickCapture={() => setError('')}
+      onChangeCapture={() => setError('')}
+    >
       <nav className="patient-navbar" aria-label="Patient dashboard">
         <Link className="patient-brand" to="/patient" aria-label="Sweety dashboard home">
           <span className="patient-brand-icon"><HeartPulse size={20} /></span>
@@ -446,12 +482,74 @@ export default function PatientDashboard() {
             </div>
           </div>
 
+          {chartData.length ? (
+            <section className="patient-report-chart" aria-label="Blood glucose chart">
+              <div className="patient-report-chart-heading">
+                <div>
+                  <h3>{reportType === 'daily' ? 'Readings by time of day' : 'Daily average glucose'}</h3>
+                  <p>{reportType === 'daily' ? 'Each bar shows a recorded reading.' : 'Each bar shows the average of readings for that day.'}</p>
+                </div>
+                <span>mg/dL</span>
+              </div>
+              <div className="patient-report-chart-scroll">
+                <svg
+                  className="patient-report-chart-svg"
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  role="img"
+                  aria-label={`${reportType === 'daily' ? 'Glucose readings by time of day' : 'Daily average glucose readings'} chart`}
+                >
+                  <title>{reportType === 'daily' ? 'Glucose readings by time of day' : 'Daily average glucose readings'}</title>
+                  <desc>
+                    {chartData.map(({ detail, value }) => `${detail}: ${Math.round(value)} milligrams per deciliter`).join('; ')}
+                  </desc>
+                  {[0, 1, 2, 3, 4].map((step) => {
+                    const y = chartBottom - ((chartBottom - chartTop) * step) / 4;
+                    const value = Math.round(chartStep * step);
+                    return (
+                      <g key={step}>
+                        <line x1="42" y1={y} x2={chartWidth - 12} y2={y} className="patient-chart-grid-line" />
+                        <text x="34" y={y + 4} textAnchor="end" className="patient-chart-axis-label">{value}</text>
+                      </g>
+                    );
+                  })}
+                  {chartData.map(({ label, detail, value }, index) => {
+                    const groupWidth = (chartWidth - 58) / chartData.length;
+                    const x = 48 + groupWidth * index + (groupWidth - chartBarWidth) / 2;
+                    const height = Math.max(2, ((chartBottom - chartTop) * value) / chartMax);
+                    const y = chartBottom - height;
+                    return (
+                      <g key={`${detail}-${index}`}>
+                        <title>{`${detail}: ${Math.round(value)} mg/dL`}</title>
+                        <rect
+                          x={x}
+                          y={y}
+                          width={chartBarWidth}
+                          height={height}
+                          rx="6"
+                          className="patient-chart-bar"
+                        />
+                        <text x={x + chartBarWidth / 2} y={Math.max(chartTop - 8, y - 7)} textAnchor="middle" className="patient-chart-value-label">
+                          {Math.round(value)}
+                        </text>
+                        <text x={x + chartBarWidth / 2} y={chartBottom + 22} textAnchor="middle" className="patient-chart-category-label">
+                          {label}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+            </section>
+          ) : report ? (
+            <p className="empty-state">No readings to chart for the selected period.</p>
+          ) : null}
+
           {report?.readings?.length ? (
             <div className="reading-list compact">
               {report.readings.map((reading) => (
                 <div key={reading.id} className="reading-item report-reading-item">
                   <div>
-                    <strong>{slotLabels[reading.time_slot]}</strong>
+                    <strong>{slotLabels[reading.time_slot] ?? formatStatus(reading.time_slot)}</strong>
                     <small>{reading.reading_date}</small>
                   </div>
                   <span className="reading-value">{reading.glucose_value} mg/dL</span>

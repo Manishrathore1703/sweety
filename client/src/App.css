@@ -817,6 +817,84 @@ select:focus {
   color: var(--color-text-secondary);
 }
 
+.patient-report-chart {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid #e4efec;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #fcfefd 0%, #fff 100%);
+}
+
+.patient-report-chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.patient-report-chart-heading h3 {
+  margin: 0;
+  color: var(--patient-ink);
+  font-size: 0.95rem;
+}
+
+.patient-report-chart-heading p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+}
+
+.patient-report-chart-heading > span {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--patient-mint);
+  color: var(--patient-teal);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.patient-report-chart-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.patient-report-chart-svg {
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+  overflow: visible;
+}
+
+.patient-report-chart-svg .patient-chart-grid-line {
+  stroke: #e6eeec;
+  stroke-dasharray: 4 5;
+  stroke-width: 1;
+}
+
+.patient-report-chart-svg .patient-chart-axis-label,
+.patient-report-chart-svg .patient-chart-category-label {
+  fill: #71817e;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.patient-report-chart-svg .patient-chart-value-label {
+  fill: #087f82;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.patient-report-chart-svg .patient-chart-bar {
+  fill: #42a99a;
+  transition: fill var(--transition-fast);
+}
+
+.patient-report-chart-svg .patient-chart-bar:hover {
+  fill: #087f82;
+}
+
 .patient-dashboard .reading-value {
   color: var(--color-text);
   font-size: 1rem;
