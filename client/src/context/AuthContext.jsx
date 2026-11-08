@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import api, { getApiError } from '../api/client';
+import api, { clearStoredAuth, getApiError } from '../api/client';
 
 const AuthContext = createContext(null);
 
@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
         const response = await api.get('/auth/me');
         setUser(response.data.user);
       } catch (error) {
-        localStorage.removeItem('sweety_token');
+        clearStoredAuth();
         setToken(null);
         setUser(null);
         console.error(getApiError(error));
@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('sweety_token');
+    clearStoredAuth();
     setToken(null);
     setUser(null);
   };

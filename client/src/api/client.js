@@ -4,6 +4,10 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
 });
 
+export const clearStoredAuth = () => {
+  localStorage.removeItem('sweety_token');
+};
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('sweety_token');
 
@@ -13,6 +17,18 @@ api.interceptors.request.use((config) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && !window.location.pathname.startsWith('/auth')) {
+      clearStoredAuth();
+      window.location.assign('/auth');
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export const getApiError = (error) => {
   if (error?.response?.data?.message) {
