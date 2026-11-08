@@ -1,15 +1,9 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, CalendarRange, Clock3, Droplets, LogOut, PencilLine, PlusCircle, Search, Trash2, UserRound } from 'lucide-react';
+import { BarChart3, CalendarRange, Clock3, LogOut, PencilLine, PlusCircle, Search, Trash2, UserRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api, { getApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-
-const slotLabels = {
-  morning_fasting: 'Morning fasting',
-  after_breakfast: 'After breakfast',
-  after_lunch: 'After lunch',
-  after_dinner: 'After dinner',
-};
+import { getRequestDisplayName, slotLabels } from '../utils/dashboard';
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -42,8 +36,6 @@ export default function PatientDashboard() {
   const [connectionStatus, setConnectionStatus] = useState('');
   const [sentRequests, setSentRequests] = useState([]);
   const [receivedRequests, setReceivedRequests] = useState([]);
-
-  const getRequestLabel = (request) => request.other_user_name || request.other_user_email || 'Request contact';
 
   const loadReadings = async (date = null) => {
     try {
@@ -455,8 +447,8 @@ export default function PatientDashboard() {
               <ul>
                 {sentRequests.map((request) => (
                   <li key={request.id}>
-                    <span>{getRequestLabel(request)}</span>
-                    <span className="status-pill">{request.status}</span>
+                    <span>{getRequestDisplayName(request)}</span>
+                    <span className={`status-pill ${request.status}`}>{request.status}</span>
                     {request.status === 'pending' ? (
                       <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'cancel')}>
                         Cancel
@@ -476,8 +468,8 @@ export default function PatientDashboard() {
               <ul>
                 {receivedRequests.map((request) => (
                   <li key={request.id}>
-                    <span>{getRequestLabel(request)}</span>
-                    <span className="status-pill">{request.status}</span>
+                    <span>{getRequestDisplayName(request)}</span>
+                    <span className={`status-pill ${request.status}`}>{request.status}</span>
                     {request.status === 'pending' ? (
                       <div className="mini-actions inline-actions">
                         <button type="button" className="secondary-button compact" onClick={() => updateRequestStatus(request.id, 'accept')}>Accept</button>

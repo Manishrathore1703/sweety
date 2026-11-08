@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
 import DoctorDashboard from './pages/DoctorDashboard';
 import LandingPage from './pages/LandingPage';
+import NotFoundPage from './pages/NotFoundPage';
 import PatientDashboard from './pages/PatientDashboard';
 import './App.css';
 
@@ -37,7 +38,7 @@ function App() {
             <Route path="/doctor" element={<DoctorDashboard />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
