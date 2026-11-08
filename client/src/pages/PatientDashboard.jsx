@@ -13,7 +13,7 @@ import {
   Trash2,
   UserRound,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-dom';
 import api, { getApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { formatStatus, getRequestDisplayName, slotLabels } from '../utils/dashboard';
@@ -34,6 +34,7 @@ const reportTypes = [
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
+  const { section = 'overview' } = useParams();
   const { user, logout } = useAuth();
   const [readings, setReadings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,6 +141,8 @@ export default function PatientDashboard() {
       time_slot: reading.time_slot,
       glucose_value: reading.glucose_value,
     });
+    setMessage('');
+    navigate('/patient/entry');
   };
 
   const deleteReading = async (id) => {
@@ -206,6 +209,7 @@ export default function PatientDashboard() {
   };
   const displayName = user?.name || 'Patient';
   const firstName = displayName.split(' ')[0];
+  const validSections = ['overview', 'entry', 'reports', 'history', 'connections'];
   const formattedDate = new Intl.DateTimeFormat(undefined, {
     weekday: 'long',
     month: 'long',
@@ -216,19 +220,24 @@ export default function PatientDashboard() {
     return <div className="loading-screen">Loading your patient dashboard…</div>;
   }
 
+  if (!validSections.includes(section)) {
+    return <Navigate to="/patient" replace />;
+  }
+
   return (
     <div className="page-shell patient-dashboard">
       <nav className="patient-navbar" aria-label="Patient dashboard">
-        <a className="patient-brand" href="#overview" aria-label="Sweety dashboard home">
+        <Link className="patient-brand" to="/patient" aria-label="Sweety dashboard home">
           <span className="patient-brand-icon"><HeartPulse size={20} /></span>
           <span>Sweety</span>
-        </a>
+        </Link>
 
         <div className="patient-nav-links">
-          <a href="#overview"><LayoutDashboard size={16} />Overview</a>
-          <a href="#add-reading"><PlusCircle size={16} />Add reading</a>
-          <a href="#readings"><Activity size={16} />History</a>
-          <a href="#care-team"><UserRound size={16} />Care team</a>
+          <NavLink to="/patient" end><LayoutDashboard size={16} />Overview</NavLink>
+          <NavLink to="/patient/entry"><PlusCircle size={16} />Entry</NavLink>
+          <NavLink to="/patient/reports"><BarChart3 size={16} />Reports</NavLink>
+          <NavLink to="/patient/history"><Activity size={16} />History</NavLink>
+          <NavLink to="/patient/connections"><UserRound size={16} />Care team</NavLink>
         </div>
 
         <div className="patient-account">
@@ -241,16 +250,70 @@ export default function PatientDashboard() {
         </div>
       </nav>
 
-      <header className="patient-welcome" id="overview">
-        <div>
-          <p className="eyebrow">Your health, at a glance</p>
-          <h1>Good to see you, {firstName}.</h1>
-          <p className="patient-welcome-copy">Keep your care on track, one reading at a time.</p>
-        </div>
-        <div className="patient-date"><CalendarRange size={17} />{formattedDate}</div>
-      </header>
+      {error && section !== 'entry' ? <p className="error-banner" role="alert">{error}</p> : null}
 
-      <div className="dashboard-grid dashboard-grid-two">
+      {section === 'overview' ? (
+        <>
+          <header className="patient-welcome">
+            <div>
+              <p className="eyebrow">Your health, at a glance</p>
+              <h1>Good to see you, {firstName}.</h1>
+              <p className="patient-welcome-copy">Keep your care on track, one reading at a time.</p>
+            </div>
+            <div className="patient-date"><CalendarRange size={17} />{formattedDate}</div>
+          </header>
+          <section className="card patient-overview-card">
+            <div className="section-header">
+              <div>
+                <p className="eyebrow">Your snapshot</p>
+                <h2>Latest report</h2>
+              </div>
+              <Link className="secondary-button compact" to="/patient/reports">View reports</Link>
+            </div>
+            <div className="stats-grid">
+              <div className="stat-tile stat-average">
+                <span>Average</span>
+                <strong>{stats.average ?? '—'} mg/dL</strong>
+              </div>
+              <div className="stat-tile stat-maximum">
+                <span>Maximum</span>
+                <strong>{stats.maximum ?? '—'} mg/dL</strong>
+              </div>
+              <div className="stat-tile stat-minimum">
+                <span>Minimum</span>
+                <strong>{stats.minimum ?? '—'} mg/dL</strong>
+              </div>
+              <div className="stat-tile stat-count">
+                <span>Readings</span>
+                <strong>{stats.total_readings ?? 0}</strong>
+              </div>
+            </div>
+            <div className="patient-overview-actions">
+              <Link className="primary-button" to="/patient/entry"><PlusCircle size={16} />Add a reading</Link>
+              <Link className="ghost-button" to="/patient/history">View reading history</Link>
+            </div>
+          </section>
+        </>
+      ) : (
+        <header className="patient-page-heading">
+          <p className="eyebrow">Patient portal</p>
+          <h1>{{
+            entry: 'Add a reading',
+            reports: 'Your reports',
+            history: 'Reading history',
+            connections: 'Your care team',
+          }[section]}</h1>
+          <p>{{
+            entry: 'Log a blood glucose reading to keep your records up to date.',
+            reports: 'Review your blood glucose measurements across different time periods.',
+            history: 'Review and manage your recent glucose readings.',
+            connections: 'Connect with your doctor and manage care requests.',
+          }[section]}</p>
+        </header>
+      )}
+
+      {section === 'entry' ? (
+      <div className="dashboard-grid">
         <section className="card form-card patient-reading-entry" id="add-reading">
           <div className="section-header">
             <div>
@@ -320,7 +383,11 @@ export default function PatientDashboard() {
             </div>
           </form>
         </section>
+      </div>
+      ) : null}
 
+      {section === 'reports' ? (
+      <div className="dashboard-grid">
         <section className="card patient-report-card">
           <div className="section-header">
             <div>
@@ -396,8 +463,10 @@ export default function PatientDashboard() {
           )}
         </section>
       </div>
+      ) : null}
 
-      <div className="dashboard-grid dashboard-grid-two bottom-grid">
+      {section === 'history' ? (
+      <div className="dashboard-grid">
         <section className="card patient-history-card" id="readings">
           <div className="section-header">
             <div>
@@ -441,7 +510,11 @@ export default function PatientDashboard() {
             )}
           </div>
         </section>
+      </div>
+      ) : null}
 
+      {section === 'connections' ? (
+      <div className="dashboard-grid">
         <section className="card patient-connections-card" id="care-team">
           <div className="section-header">
             <div>
@@ -525,6 +598,7 @@ export default function PatientDashboard() {
           </div>
         </section>
       </div>
+      ) : null}
     </div>
   );
 }

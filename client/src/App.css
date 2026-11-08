@@ -1301,7 +1301,8 @@ select:focus {
 }
 
 .patient-nav-links a:hover,
-.patient-nav-links a:focus-visible {
+.patient-nav-links a:focus-visible,
+.patient-nav-links a.active {
   background: var(--patient-mint);
   color: var(--patient-teal);
 }
@@ -1411,12 +1412,56 @@ select:focus {
   backdrop-filter: blur(8px);
 }
 
+.patient-page-heading {
+  margin: var(--space-8) 0 var(--space-6);
+  scroll-margin-top: 7rem;
+}
+
+.patient-page-heading .eyebrow {
+  margin-bottom: var(--space-2);
+}
+
+.patient-page-heading h1 {
+  margin: 0;
+  color: var(--patient-ink);
+  font-size: clamp(1.8rem, 3.5vw, 2.3rem);
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+}
+
+.patient-page-heading > p:last-child {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-secondary);
+}
+
 .patient-dashboard .card {
   border-color: #e5ecee;
   border-radius: var(--radius-xl);
   box-shadow: 0 6px 22px rgba(23, 59, 70, 0.045);
   scroll-margin-top: 7rem;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.patient-overview-card .section-header {
+  align-items: center;
+}
+
+.patient-overview-card .section-header .secondary-button {
+  text-decoration: none;
+}
+
+.patient-overview-card .stats-grid {
+  margin-bottom: var(--space-5);
+}
+
+.patient-overview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.patient-overview-actions a {
+  text-decoration: none;
 }
 
 .patient-dashboard .card:hover {
@@ -1613,6 +1658,22 @@ select:focus {
     font-size: 0.925rem;
   }
 
+  .patient-page-heading {
+    margin: var(--space-6) 0 var(--space-4);
+  }
+
+  .patient-overview-card .section-header {
+    align-items: flex-start;
+  }
+
+  .patient-overview-actions {
+    flex-direction: column;
+  }
+
+  .patient-overview-actions a {
+    width: 100%;
+  }
+
   .patient-date {
     padding: var(--space-2) var(--space-3);
     font-size: 0.8rem;
@@ -1620,5 +1681,417 @@ select:focus {
 
   .patient-dashboard .section-header {
     margin-bottom: var(--space-4);
+  }
+}
+
+.doctor-dashboard {
+  --doctor-ink: #203653;
+  --doctor-blue: #3867bd;
+  --doctor-blue-soft: #edf3ff;
+  padding-top: var(--space-5);
+}
+
+.doctor-navbar {
+  position: sticky;
+  top: var(--space-3);
+  z-index: var(--z-sticky);
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 28px rgba(32, 54, 83, 0.07);
+  backdrop-filter: blur(14px);
+}
+
+.doctor-brand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--doctor-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.doctor-brand small {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.doctor-brand-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--doctor-blue-soft);
+  color: var(--doctor-blue);
+}
+
+.doctor-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.doctor-nav-links a {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 0.65rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 650;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.doctor-nav-links a:hover,
+.doctor-nav-links a:focus-visible,
+.doctor-nav-links a.active {
+  background: var(--doctor-blue-soft);
+  color: var(--doctor-blue);
+}
+
+.doctor-account {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.doctor-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e9efff;
+  color: #435db5;
+  font-weight: 750;
+}
+
+.doctor-account-name {
+  max-width: 8rem;
+  overflow: hidden;
+  color: var(--doctor-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doctor-logout {
+  min-height: 38px;
+  margin-left: var(--space-1);
+  padding: 0 var(--space-2);
+  font-size: 0.82rem;
+}
+
+.doctor-welcome {
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+  padding: var(--space-8) clamp(var(--space-5), 5vw, var(--space-10));
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(ellipse at 87% 8%, rgba(166, 192, 255, 0.3), transparent 34%),
+    linear-gradient(115deg, #203653 0%, #34588b 58%, #4779c8 100%);
+  box-shadow: 0 14px 32px rgba(32, 54, 83, 0.17);
+}
+
+.doctor-welcome .eyebrow {
+  margin-bottom: var(--space-3);
+  color: rgba(235, 242, 255, 0.8);
+}
+
+.doctor-welcome h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.8rem, 3.5vw, 2.45rem);
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.doctor-welcome-copy {
+  margin: var(--space-3) 0 0;
+  color: rgba(241, 246, 255, 0.82);
+}
+
+.doctor-welcome > .primary-button {
+  flex: 0 0 auto;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+}
+
+.doctor-welcome > .primary-button:hover {
+  background: rgba(255, 255, 255, 0.23);
+}
+
+.doctor-page-heading {
+  margin: var(--space-8) 0 var(--space-6);
+}
+
+.doctor-page-heading .eyebrow {
+  margin-bottom: var(--space-2);
+  color: var(--doctor-blue);
+}
+
+.doctor-page-heading h1 {
+  margin: 0;
+  color: var(--doctor-ink);
+  font-size: clamp(1.8rem, 3.5vw, 2.3rem);
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+}
+
+.doctor-page-heading > p:last-child {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-secondary);
+}
+
+.doctor-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.doctor-overview-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.doctor-overview-stat > div {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.doctor-overview-stat > div span {
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.doctor-overview-stat > div strong {
+  color: var(--doctor-ink);
+  font-size: 1.6rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.doctor-overview-stat > a {
+  grid-column: 2;
+  color: var(--doctor-blue);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.doctor-overview-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  grid-row: span 2;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--doctor-blue-soft);
+  color: var(--doctor-blue);
+}
+
+.doctor-overview-icon.requests {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.doctor-overview-icon.history {
+  background: var(--color-secondary-soft);
+  color: var(--color-secondary);
+}
+
+.doctor-overview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.doctor-overview-actions h2 {
+  margin: 0;
+  color: var(--doctor-ink);
+  font-size: 1.15rem;
+}
+
+.doctor-overview-actions p:last-child {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.doctor-dashboard .primary-button {
+  background: var(--doctor-blue);
+  box-shadow: 0 4px 12px rgba(56, 103, 189, 0.16);
+}
+
+.doctor-dashboard .primary-button:hover {
+  background: #2d56a1;
+}
+
+.doctor-dashboard .card {
+  border-color: #e5eaf1;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 6px 22px rgba(32, 54, 83, 0.045);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.doctor-dashboard .card:hover {
+  border-color: #d3deef;
+  box-shadow: 0 10px 28px rgba(32, 54, 83, 0.075);
+}
+
+.doctor-dashboard .section-header h2 {
+  color: var(--doctor-ink);
+}
+
+.doctor-dashboard .eyebrow {
+  color: var(--doctor-blue);
+}
+
+.doctor-dashboard .doctor-welcome .eyebrow {
+  color: rgba(235, 242, 255, 0.8);
+}
+
+.doctor-dashboard label {
+  font-size: 0.875rem;
+}
+
+.doctor-dashboard input,
+.doctor-dashboard select {
+  border-color: #dce4ef;
+  border-radius: 10px;
+  background-color: #fcfdff;
+}
+
+.doctor-dashboard .doctor-patients-card .patient-list li,
+.doctor-dashboard .doctor-requests-card .request-panel li,
+.doctor-dashboard .doctor-assignment-card .history-list li {
+  border-color: #e8edf3;
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+@media (max-width: 1050px) {
+  .doctor-navbar {
+    flex-wrap: wrap;
+  }
+
+  .doctor-nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-top: var(--space-2);
+    border-top: 1px solid #edf1f5;
+  }
+
+  .doctor-nav-links a {
+    flex: 0 0 auto;
+  }
+
+  .doctor-account {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .doctor-dashboard {
+    padding: var(--space-3) var(--space-3) var(--space-8);
+  }
+
+  .doctor-navbar {
+    top: var(--space-2);
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+  }
+
+  .doctor-account-name {
+    display: none;
+  }
+
+  .doctor-logout {
+    width: 40px;
+    min-width: 40px;
+    margin-left: 0;
+    padding: 0;
+  }
+
+  .doctor-logout span {
+    display: none;
+  }
+
+  .doctor-nav-links {
+    gap: 0;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: var(--space-2) var(--space-2) 0;
+  }
+
+  .doctor-nav-links a {
+    min-height: 40px;
+    gap: var(--space-1);
+    padding: 0 var(--space-2);
+    font-size: 0.76rem;
+  }
+
+  .doctor-nav-links a svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .doctor-welcome {
+    min-height: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+    padding: var(--space-6) var(--space-5);
+    border-radius: var(--radius-lg);
+  }
+
+  .doctor-overview-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .doctor-overview-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .doctor-overview-actions > .primary-button {
+    width: 100%;
+  }
+
+  .doctor-page-heading {
+    margin: var(--space-6) 0 var(--space-4);
   }
 }

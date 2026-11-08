@@ -1,6 +1,19 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, CheckCircle2, LogOut, Search, ShieldCheck, UserRound, XCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import {
+  Activity,
+  BarChart3,
+  CheckCircle2,
+  ClipboardList,
+  HeartPulse,
+  LayoutDashboard,
+  LogOut,
+  Search,
+  ShieldCheck,
+  UserPlus,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import { Link, Navigate, NavLink, useNavigate, useParams } from 'react-router-dom';
 import api, { getApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { formatStatus, getRequestDisplayName, slotLabels } from '../utils/dashboard';
@@ -14,6 +27,7 @@ const reportTypes = [
 
 export default function DoctorDashboard() {
   const navigate = useNavigate();
+  const { section = 'overview' } = useParams();
   const { user, logout } = useAuth();
   const [patients, setPatients] = useState([]);
   const [history, setHistory] = useState([]);
@@ -22,6 +36,7 @@ export default function DoctorDashboard() {
   const [searchEmail, setSearchEmail] = useState('');
   const [patientLookup, setPatientLookup] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [statusIsError, setStatusIsError] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [reportType, setReportType] = useState('daily');
   const [reportDate, setReportDate] = useState(today);
@@ -53,6 +68,8 @@ export default function DoctorDashboard() {
   const searchPatient = async (event) => {
     event.preventDefault();
     setStatusMessage('');
+    setStatusIsError(false);
+    setPatientLookup(null);
 
     try {
       const response = await api.get('/patients/search', {
@@ -60,6 +77,7 @@ export default function DoctorDashboard() {
       });
       setPatientLookup(response.data.patient);
       if (!response.data.patient) {
+        setStatusIsError(true);
         setStatusMessage('No patient matched that email.');
       }
     } catch (caughtError) {
@@ -77,6 +95,7 @@ export default function DoctorDashboard() {
       const response = await api.post('/doctor-requests', {
         patient_email: patientLookup.email,
       });
+      setStatusIsError(false);
       setStatusMessage(response.data.message);
       setPatientLookup(null);
       setSearchEmail('');
@@ -89,6 +108,7 @@ export default function DoctorDashboard() {
   const updateRequestStatus = async (id, action) => {
     try {
       const response = await api.patch(`/doctor-requests/${id}/${action}`);
+      setStatusIsError(false);
       setStatusMessage(response.data.message);
       await fetchDoctorData();
     } catch (caughtError) {
@@ -132,22 +152,101 @@ export default function DoctorDashboard() {
     average: null,
     total_readings: 0,
   };
+  const pendingRequestCount = [...sentRequests, ...receivedRequests]
+    .filter((request) => request.status === 'pending').length;
+  const displayName = user?.name || 'Doctor';
+  const firstName = displayName.split(' ')[0];
+  const validSections = ['overview', 'invite', 'assignments', 'requests', 'monitoring', 'history'];
+  const sectionDetails = {
+    invite: ['Invite a patient', 'Find a patient and send a secure connection request.'],
+    assignments: ['Your assignments', 'Review and manage patients currently in your care.'],
+    requests: ['Connection requests', 'Respond to incoming requests and track your invitations.'],
+    monitoring: ['Patient monitoring', 'Review glucose readings for your assigned patients.'],
+    history: ['Assignment history', 'Review your past and current patient assignments.'],
+  };
+
+  if (!validSections.includes(section)) {
+    return <Navigate to="/doctor" replace />;
+  }
 
   return (
     <div className="page-shell doctor-dashboard">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Doctor portal</p>
-          <h1>Welcome, {user?.name || 'Doctor'}</h1>
+      <nav className="doctor-navbar" aria-label="Doctor dashboard">
+        <Link className="doctor-brand" to="/doctor" aria-label="Sweety doctor dashboard home">
+          <span className="doctor-brand-icon"><HeartPulse size={20} /></span>
+          <span>Sweety <small>Care</small></span>
+        </Link>
+
+        <div className="doctor-nav-links">
+          <NavLink to="/doctor" end><LayoutDashboard size={16} />Overview</NavLink>
+          <NavLink to="/doctor/invite"><UserPlus size={16} />Invite</NavLink>
+          <NavLink to="/doctor/assignments"><Users size={16} />Assignments</NavLink>
+          <NavLink to="/doctor/requests"><ClipboardList size={16} />Requests</NavLink>
+          <NavLink to="/doctor/monitoring"><Activity size={16} />Monitoring</NavLink>
+          <NavLink to="/doctor/history"><XCircle size={16} />History</NavLink>
         </div>
 
-        <button type="button" className="ghost-button" onClick={() => { logout(); navigate('/auth', { replace: true }); }}>
-          <LogOut size={16} />
-          Log out
-        </button>
-      </header>
+        <div className="doctor-account">
+          <span className="doctor-avatar" aria-hidden="true">{displayName.charAt(0).toUpperCase()}</span>
+          <span className="doctor-account-name">{displayName}</span>
+          <button type="button" className="ghost-button doctor-logout" onClick={() => { logout(); navigate('/auth', { replace: true }); }}>
+            <LogOut size={16} />
+            <span>Log out</span>
+          </button>
+        </div>
+      </nav>
 
-      <div className="dashboard-grid dashboard-grid-two">
+      {error ? <p className="error-banner" role="alert">{error}</p> : null}
+      {statusMessage && section !== 'invite' && section !== 'requests' ? (
+        <p className={statusIsError ? 'error-banner' : 'success-banner'} role={statusIsError ? 'alert' : 'status'}>{statusMessage}</p>
+      ) : null}
+
+      {section === 'overview' ? (
+        <>
+          <header className="doctor-welcome">
+            <div>
+              <p className="eyebrow">Doctor portal</p>
+              <h1>Welcome back, {firstName}.</h1>
+              <p className="doctor-welcome-copy">A clear view of your patients and their care.</p>
+            </div>
+            <Link className="primary-button" to="/doctor/monitoring"><Activity size={16} />Monitor patients</Link>
+          </header>
+          <section className="doctor-overview-grid">
+            <article className="card doctor-overview-stat">
+              <span className="doctor-overview-icon"><Users size={19} /></span>
+              <div><span>Active patients</span><strong>{patients.length}</strong></div>
+              <Link to="/doctor/assignments">View assignments</Link>
+            </article>
+            <article className="card doctor-overview-stat">
+              <span className="doctor-overview-icon requests"><ClipboardList size={19} /></span>
+              <div><span>Pending requests</span><strong>{pendingRequestCount}</strong></div>
+              <Link to="/doctor/requests">Review requests</Link>
+            </article>
+            <article className="card doctor-overview-stat">
+              <span className="doctor-overview-icon history"><Activity size={19} /></span>
+              <div><span>Assignment records</span><strong>{history.length}</strong></div>
+              <Link to="/doctor/history">View history</Link>
+            </article>
+          </section>
+          <section className="card doctor-overview-actions">
+            <div>
+              <p className="eyebrow">Quick action</p>
+              <h2>Bring a patient into your care</h2>
+              <p>Search by email to send a connection invitation.</p>
+            </div>
+            <Link className="primary-button" to="/doctor/invite"><UserPlus size={16} />Invite a patient</Link>
+          </section>
+        </>
+      ) : (
+        <header className="doctor-page-heading">
+          <p className="eyebrow">Doctor portal</p>
+          <h1>{sectionDetails[section][0]}</h1>
+          <p>{sectionDetails[section][1]}</p>
+        </header>
+      )}
+
+      {section === 'invite' ? (
+      <div className="dashboard-grid">
         <section className="card form-card doctor-search-card">
           <div className="section-header">
             <div>
@@ -155,7 +254,7 @@ export default function DoctorDashboard() {
               <h2>Connect with a patient</h2>
             </div>
             <div className="icon-badge primary">
-              <UserRound size={18} />
+              <UserPlus size={18} />
             </div>
           </div>
 
@@ -185,10 +284,17 @@ export default function DoctorDashboard() {
             </div>
           ) : null}
 
-          {statusMessage ? <p className="success-banner" role="status">{statusMessage}</p> : null}
-          {error ? <p className="error-banner" role="alert">{error}</p> : null}
+          {statusMessage ? (
+            <p className={statusIsError ? 'error-banner' : 'success-banner'} role={statusIsError ? 'alert' : 'status'}>
+              {statusMessage}
+            </p>
+          ) : null}
         </section>
+      </div>
+      ) : null}
 
+      {section === 'assignments' ? (
+      <div className="dashboard-grid">
         <section className="card doctor-patients-card">
           <div className="section-header">
             <div>
@@ -212,6 +318,7 @@ export default function DoctorDashboard() {
                     <button type="button" className="secondary-button compact" onClick={() => {
                       setSelectedPatientId(patient.id);
                       loadPatientReport(patient.id);
+                      navigate('/doctor/monitoring');
                     }}>
                       View report
                     </button>
@@ -227,8 +334,10 @@ export default function DoctorDashboard() {
           )}
         </section>
       </div>
+      ) : null}
 
-      <div className="dashboard-grid dashboard-grid-two bottom-grid">
+      {section === 'requests' ? (
+      <div className="dashboard-grid">
         <section className="card doctor-requests-card">
           <div className="section-header">
             <div>
@@ -283,7 +392,11 @@ export default function DoctorDashboard() {
             )}
           </div>
         </section>
+      </div>
+      ) : null}
 
+      {section === 'monitoring' ? (
+      <div className="dashboard-grid">
         <section className="card doctor-report-card">
           <div className="section-header">
             <div>
@@ -300,6 +413,7 @@ export default function DoctorDashboard() {
             <select value={selectedPatientId} onChange={(event) => {
               const nextId = event.target.value;
               setSelectedPatientId(nextId);
+              setReport(null);
               if (nextId) {
                 loadPatientReport(nextId);
               }
@@ -383,7 +497,9 @@ export default function DoctorDashboard() {
           )}
         </section>
       </div>
+      ) : null}
 
+      {section === 'history' ? (
       <div className="card assignment-card doctor-assignment-card">
         <div className="section-header">
           <div>
@@ -411,6 +527,7 @@ export default function DoctorDashboard() {
           <p className="empty-state">No assignment history yet.</p>
         )}
       </div>
+      ) : null}
     </div>
   );
 }
