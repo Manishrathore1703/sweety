@@ -280,7 +280,7 @@ example password with a local-only password:
 
 ```sql
 CREATE ROLE sweety_user WITH LOGIN PASSWORD 'replace_with_a_local_password';
-CREATE DATABASE sweety OWNER sweety_user;
+CREATE DATABASE sweety_db OWNER sweety_user;
 \q
 ```
 
@@ -292,10 +292,9 @@ created:
 ```dotenv
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=sweety
-DB_USER=
-DB_PASSWORD=
-
+DB_NAME=sweety_db
+DB_USER=sweety_user
+DB_PASSWORD=replace_with_a_local_password
 ```
 
 The backend reads `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and
@@ -319,8 +318,8 @@ From the repository root, apply the initial schema and the existing
 relationship-workflow migration as the database role configured above:
 
 ```sh
-psql -h localhost -p 5432 -U sweety_user -d sweety -f server/database/schema.sql
-psql -h localhost -p 5432 -U sweety_user -d sweety -f server/database/migrations/001_relationship_workflow.sql
+psql -h localhost -p 5432 -U sweety_user -d sweety_db -f server/database/schema.sql
+psql -h localhost -p 5432 -U sweety_user -d sweety_db -f server/database/migrations/001_relationship_workflow.sql
 ```
 
 Both SQL files are designed to be rerun and do not drop tables or delete data.
@@ -341,9 +340,11 @@ npm run seed
 The script creates the local patient demo account documented below, hashes its
 password with the backend's existing bcrypt mechanism, and adds sample readings
 for all four supported time slots over the last 90 days for each demo patient.
-It also retains the existing doctor/patient relationship demo records. Existing
-readings in the same patient/date/slot are left unchanged; run the seed only
-against a local development database.
+It also creates a demo doctor, three additional demo patients, and doctor/patient
+relationship records. Existing readings in the same patient/date/slot are left
+unchanged; run the seed only against a local development database. Registering
+a new account in the app does not automatically add sample readings to that
+account; the seed populates only its predefined demo accounts.
 
 ## 🔐 Environment Configuration
 
