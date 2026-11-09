@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const pool = require("../src/config/db");
 
 const demoUsers = [
+    { key: "demoPatient", name: "Sweety Demo Patient", email: "demo@sweety.local", role: "patient", password: "Demo@12345" },
     { key: "doctor", name: "Demo Doctor", email: "doctor@example.com", role: "doctor", password: "DemoDoctor123!" },
     { key: "patient1", name: "Demo Patient One", email: "patient1@example.com", role: "patient", password: "DemoPatient123!" },
     { key: "patient2", name: "Demo Patient Two", email: "patient2@example.com", role: "patient", password: "DemoPatient123!" },
@@ -13,6 +14,13 @@ const dateDaysAgo = (days) => {
     date.setUTCDate(date.getUTCDate() - days);
     return date.toISOString().slice(0, 10);
 };
+
+const readingSlots = [
+    { timeSlot: "morning_fasting", minimum: 88, range: 25 },
+    { timeSlot: "after_breakfast", minimum: 124, range: 37 },
+    { timeSlot: "after_lunch", minimum: 119, range: 39 },
+    { timeSlot: "after_dinner", minimum: 116, range: 42 },
+];
 
 const seed = async () => {
     const client = await pool.connect();
@@ -43,6 +51,18 @@ const seed = async () => {
         }
 
         const readings = [
+            [ids.demoPatient, dateDaysAgo(2), "morning_fasting", 101],
+            [ids.demoPatient, dateDaysAgo(2), "after_breakfast", 142],
+            [ids.demoPatient, dateDaysAgo(2), "after_lunch", 134],
+            [ids.demoPatient, dateDaysAgo(2), "after_dinner", 128],
+            [ids.demoPatient, dateDaysAgo(1), "morning_fasting", 96],
+            [ids.demoPatient, dateDaysAgo(1), "after_breakfast", 138],
+            [ids.demoPatient, dateDaysAgo(1), "after_lunch", 129],
+            [ids.demoPatient, dateDaysAgo(1), "after_dinner", 124],
+            [ids.demoPatient, dateDaysAgo(0), "morning_fasting", 99],
+            [ids.demoPatient, dateDaysAgo(0), "after_breakfast", 145],
+            [ids.demoPatient, dateDaysAgo(0), "after_lunch", 136],
+            [ids.demoPatient, dateDaysAgo(0), "after_dinner", 131],
             [ids.patient1, dateDaysAgo(2), "morning_fasting", 104],
             [ids.patient1, dateDaysAgo(1), "after_lunch", 138],
             [ids.patient1, dateDaysAgo(0), "morning_fasting", 99],
@@ -51,14 +71,30 @@ const seed = async () => {
             [ids.patient3, dateDaysAgo(2), "after_breakfast", 127],
         ];
 
+        const patientKeys = ["demoPatient", "patient1", "patient2", "patient3"];
+        for (const [patientIndex, patientKey] of patientKeys.entries()) {
+            for (let daysAgo = 0; daysAgo < 90; daysAgo += 1) {
+                for (const [slotIndex, slot] of readingSlots.entries()) {
+                    const glucoseValue =
+                        slot.minimum +
+                        ((daysAgo * 7 + patientIndex * 11 + slotIndex * 13) %
+                            slot.range);
+                    readings.push([
+                        ids[patientKey],
+                        dateDaysAgo(daysAgo),
+                        slot.timeSlot,
+                        glucoseValue,
+                    ]);
+                }
+            }
+        }
+
         for (const reading of readings) {
             await client.query(
                 `INSERT INTO readings
                     (user_id, reading_date, time_slot, glucose_value)
                  VALUES ($1, $2, $3, $4)
-                 ON CONFLICT (user_id, reading_date, time_slot) DO UPDATE
-                    SET glucose_value = EXCLUDED.glucose_value,
-                        updated_at = CURRENT_TIMESTAMP`,
+                 ON CONFLICT (user_id, reading_date, time_slot) DO NOTHING`,
                 reading
             );
         }
@@ -101,6 +137,7 @@ const seed = async () => {
 
         await client.query("COMMIT");
         console.log("Demo data seeded successfully.");
+        console.log("Patient login: demo@sweety.local / Demo@12345");
     } catch (error) {
         await client.query("ROLLBACK");
         throw error;
