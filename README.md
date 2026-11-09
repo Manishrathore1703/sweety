@@ -571,34 +571,25 @@ outside local development.
 - The frontend has lint and production-build checks but no automated frontend
   test script currently defined.
 
-## 🚀 Future Improvements
+## 🚀 What I'd Improve With More Time
 
-### 1. Broader automated testing
-
-Add database-backed API integration tests and expand frontend tests to cover
-authentication, role permissions, doctor-patient consent, assignment
-revocation, and report access.
-
-### 2. Stronger validation and security
-
-Strengthen and consistently apply input validation across all API routes.
-Harden production deployment, secrets management, database access, and
-authentication configuration.
-
-### 3. Accessibility and usability
-
-Improve keyboard navigation, screen-reader support, color contrast, mobile
-layouts, form feedback, and loading, empty, and error states.
-
-### 4. Performance and scalability
-
-Add pagination and query/performance improvements where data volume requires
-them.
-
-### 5. Monitoring and reliability
-
-Add structured monitoring, health reporting, actionable error logging, and
-production operational checks.
+1. **AI doctor assistant:** Add an educational assistant that helps patients
+   understand glucose trends and find general health information. It would not
+   diagnose conditions or recommend treatment and would encourage users to
+   consult their healthcare professional.
+2. **One-to-one video consultations:** Support secure doctor–patient video
+   calls, appointment scheduling, and consultation follow-ups.
+3. **Smart reminders:** Let patients configure reminders for glucose readings,
+   appointments, and follow-ups.
+4. **Advanced doctor dashboard:** Give doctors a clearer view of patient
+   history and trends, with tools for recording consultation notes.
+5. **Advanced analytics:** Add downloadable reports and more detailed
+   comparisons across readings and time periods.
+6. **Security and deployment:** Strengthen operational security with audit
+   logs, Docker-based deployment, automated backups, and monitoring.
+7. **Accessibility and usability:** Improve the mobile experience and make
+   the application more accessible through better keyboard navigation,
+   screen-reader support, and clearer interactions.
 
 ## 👨‍💻 Author
 
